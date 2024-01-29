@@ -1,0 +1,26 @@
+server:
+  port: 10006
+spring:
+  application:
+    name: im-server
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.46.128:8848
+  redis:
+    host: 192.168.46.128
+    port: 6379
+    database: 0
+    password: wereiyou123
+    jedis:
+      pool:
+        max-active: 20
+  rabbitmq:
+    host: 192.168.46.128
+    port: 5672
+    username: guest
+    password: guest
+netty:
+  port: 10008
+  application:
+    name: im-netty

@@ -1,0 +1,30 @@
+server:
+  port: 10005
+spring:
+  application:
+    name: im-file
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.46.128:3306/im?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: wereiyou
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.46.128:8848
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+client:
+  permit-all:
+    paths: /image/**,/file/**
+minio:
+  url: http://192.168.46.128:9090
+  access-key: root
+  secret-key: wereiyou
+  private-bucket-name: im-private
+  public-bucket-name: im-public
+  image-path: image
+  file-path: file

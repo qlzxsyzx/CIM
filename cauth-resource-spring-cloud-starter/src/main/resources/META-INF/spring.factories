@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.qlzxsyzx.resource.config.ResourceServerAutoConfiguration,\
+  com.qlzxsyzx.resource.config.TokenConfiguration,\
+  com.qlzxsyzx.resource.config.ResourceWebConfig,\
+  com.qlzxsyzx.resource.config.FeignOauthConfig

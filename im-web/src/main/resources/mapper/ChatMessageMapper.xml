@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.qlzxsyzx.web.mapper.ChatMessageMapper">
+  <select id="listLatestMessageGroupByRoomId" resultType="ChatMessage">
+      select message_id, m1.room_id, sender_id, receiver_id, type, content, record_id, status, create_time
+      from t_chat_messages m1
+      join (
+          select room_id, max(create_time) as max_create_time
+          from t_chat_messages
+          where room_id in
+          <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+              #{roomId}
+          </foreach>
+          group by room_id
+      ) m2
+      on m1.room_id = m2.room_id and m1.create_time = m2.max_create_time
+  </select>
+</mapper>

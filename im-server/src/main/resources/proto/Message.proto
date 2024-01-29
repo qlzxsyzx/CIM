@@ -1,0 +1,77 @@
+/* 定义IM 消息格式 */
+syntax = "proto3";
+
+option java_package = "com.qlzxsyzx.server.netty.proto";
+option java_outer_classname = "CustomMessage";
+
+enum HeadType
+{
+  LOGIN_REQUEST = 0;
+  LOGIN_RESPONSE = 1;
+  KEEP_ALIVE_REQUEST = 2;
+  KEEP_ALIVE_RESPONSE = 3;
+  MESSAGE_REQUEST = 4;
+  SYSTEM_BROADCAST = 5;
+  SYSTEM_NOTIFICATION = 6;
+}
+
+message LoginRequest{
+  int64 userId = 1;
+  string platform = 2;
+  string token = 3;
+}
+
+message LoginResponse{
+  int32 code = 1;
+  string msg = 2;
+}
+
+message KeepAliveRequest{
+  int64 userId = 1;
+  string platform = 2;
+}
+
+message KeepAliveResponse{
+  int32 code = 1;
+  string msg = 2;
+}
+
+message MessageRequest{
+  int64 messageId = 1;
+  int64 roomId = 2;
+  int64 senderId = 3;
+  int64 receiverId = 4;
+  int32 type = 5; // 0系统，1文本，2图片，3文件
+  string content = 6;
+  int64 recordId = 7;
+  string createTime = 8;
+}
+
+message SystemBroadcast {
+  int32 type = 1; // 1：广播
+  int32 code = 2; // 具体类型
+  string content = 3;
+  string createTime = 4;
+}
+
+message SystemNotification {
+  int32 type = 1; // 1.通知，2.提示
+  int32 code = 2; // 具体类型
+  int64 userId = 3; // 用户ID
+  string platform = 4; // 平台
+  string content = 5;
+  string createTime = 6;
+}
+
+message Message{
+  int32 headType = 1;
+  oneof body{
+    LoginRequest loginRequest = 2;
+    LoginResponse loginResponse = 3;
+    KeepAliveRequest keepAliveRequest = 4;
+    KeepAliveResponse keepAliveResponse = 5;
+    MessageRequest messageRequest = 6;
+    SystemBroadcast systemBroadcast = 7;
+    SystemNotification systemNotification = 8;
+  }
+}

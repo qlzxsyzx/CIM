@@ -1,0 +1,26 @@
+server:
+  port: 10002
+spring:
+  application:
+    name: im-web
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.46.128:3306/im?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: wereiyou
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.46.128:8848
+  rabbitmq:
+    host: 192.168.46.128
+    port: 5672
+    username: guest
+    password: guest
+client:
+  permit-all:
+    paths: /friend/**,/chat/**
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  type-aliases-package: com.qlzxsyzx.web.entity
