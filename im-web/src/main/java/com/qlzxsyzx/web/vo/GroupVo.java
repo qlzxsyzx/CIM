@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class GroupVo {
-    private String id;
+    private Long id;
 
     private String name;
 
@@ -14,7 +14,7 @@ public class GroupVo {
 
     private String description;
 
-    private String roomId;
+    private Long roomId;
 
     private Integer memberCount;
 

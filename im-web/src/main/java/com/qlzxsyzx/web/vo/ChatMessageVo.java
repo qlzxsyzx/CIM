@@ -6,20 +6,20 @@ import java.time.LocalDateTime;
 
 @Data
 public class ChatMessageVo {
-    private String messageId;
+    private Long messageId;
 
-    private String roomId;
+    private Long roomId;
 
-    private String senderId;
+    private Long senderId;
 
-    private String receiverId;
+    private Long receiverId;
 
     // 0系统，1文本，2图片，3文件
     private Integer type;
 
     private String content;
 
-    private String recordId;
+    private Long recordId;
 
     private LocalDateTime createTime;
 }

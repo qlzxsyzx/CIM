@@ -4,11 +4,11 @@ import lombok.Data;
 
 @Data
 public class GroupSettingVo {
-    private String id;
+    private Long id;
 
-    private String groupId;
+    private Long groupId;
 
-    private  String userId;
+    private  Long userId;
 
     private String groupNickName;
 

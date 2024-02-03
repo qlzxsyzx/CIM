@@ -6,15 +6,15 @@ import java.time.LocalDateTime;
 
 @Data
 public class FriendVo {
-    private String id;
+    private Long id;
 
-    private String userId;
+    private Long userId;
 
-    private String friendId;
+    private Long friendId;
 
     private String remark;
 
-    private String roomId;
+    private Long roomId;
 
     private LocalDateTime createTime;
 }

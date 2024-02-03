@@ -6,15 +6,15 @@ import java.time.LocalDateTime;
 
 @Data
 public class RecentChatVo {
-    private String id;
+    private Long id;
 
-    private String userId;
+    private Long userId;
 
-    private String toUserId;
+    private Long toUserId;
 
-    private String groupId;
+    private Long groupId;
 
-    private String roomId;
+    private Long roomId;
 
     private Integer type;
 
