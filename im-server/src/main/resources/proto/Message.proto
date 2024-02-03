@@ -41,6 +41,7 @@ message MessageRequest{
   int64 roomId = 2;
   int64 senderId = 3;
   int64 receiverId = 4;
+
   int32 type = 5; // 0系统，1文本，2图片，3文件
   string content = 6;
   int64 recordId = 7;

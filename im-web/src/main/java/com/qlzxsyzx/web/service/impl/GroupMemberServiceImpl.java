@@ -5,6 +5,7 @@ import com.qlzxsyzx.web.entity.GroupMember;
 import com.qlzxsyzx.web.mapper.GroupMemberMapper;
 import com.qlzxsyzx.web.service.GroupMemberService;
 import com.qlzxsyzx.web.vo.GroupMemberVo;
+import com.qlzxsyzx.web.vo.GroupSettingVo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -20,12 +21,20 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public Map<Long, GroupMemberVo> getGroupIdAndGroupMemberVoMap(Long userId, List<Long> groupIds) {
+    public Map<Long, GroupSettingVo> getGroupIdAndGroupSettingVoMap(Long userId, List<Long> groupIds) {
         List<GroupMember> list = query().eq("user_id", userId).in("group_id", groupIds).list();
-        return list.stream().collect(Collectors.toMap(GroupMember::getGroupId, this::convertToGroupMemberVo));
+        return list.stream().collect(Collectors.toMap(GroupMember::getGroupId, this::convertToGroupSettingVo));
     }
 
-    private GroupMemberVo convertToGroupMemberVo(GroupMember groupMember) {
+    @Override
+    public GroupSettingVo convertToGroupSettingVo(GroupMember groupMember) {
+        GroupSettingVo groupSettingVo = new GroupSettingVo();
+        BeanUtils.copyProperties(groupMember, groupSettingVo);
+        return groupSettingVo;
+    }
+
+    @Override
+    public GroupMemberVo convertToGroupMemberVo(GroupMember groupMember) {
         GroupMemberVo groupMemberVo = new GroupMemberVo();
         BeanUtils.copyProperties(groupMember, groupMemberVo);
         return groupMemberVo;

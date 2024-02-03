@@ -58,14 +58,11 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         // 根据群组id列表查询群组列表
         List<Group> groups = query().in("id", groupIds).ne("status", 0).list();
         Map<Long, GroupVo> groupVoMap = groups.stream().collect(Collectors.toMap(Group::getId, this::convertToGroupVo));
-        // groupId groupMember Map
         List<GroupItemVo> groupItemVos = new ArrayList<>();
         for (GroupMember groupMember : groupMembers) {
-            GroupMemberVo groupMemberVo = new GroupMemberVo();
-            BeanUtils.copyProperties(groupMember, groupMemberVo);
             GroupItemVo groupItemVo = new GroupItemVo();
             groupItemVo.setGroup(groupVoMap.get(groupMember.getGroupId()));
-            groupItemVo.setGroupMember(groupMemberVo);
+            groupItemVo.setGroupSetting(groupMemberService.convertToGroupSettingVo(groupMember));
             groupItemVos.add(groupItemVo);
         }
         return ResponseEntity.success(groupItemVos);
@@ -120,12 +117,8 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         recentChatService.save(recentChat);
         RecentChatVo recentChatVo = new RecentChatVo();
         BeanUtils.copyProperties(recentChat, recentChatVo);
-        GroupMemberVo groupMemberVo = new GroupMemberVo();
-        BeanUtils.copyProperties(groupMember, groupMemberVo);
         ChatItemVo chatItemVo = new ChatItemVo();
         chatItemVo.setRecentChat(recentChatVo);
-        chatItemVo.setGroup(groupVo);
-        chatItemVo.setGroupMember(groupMemberVo);
         // 返回创建的群组信息给用户
         return ResponseEntity.success(chatItemVo);
     }

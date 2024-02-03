@@ -15,7 +15,7 @@ import java.util.List;
 @Slf4j
 @Service
 public class MinioServiceImpl implements MinioService {
-    public static final Integer SMALL_FILE_MAX_SIZE = 1024 * 1024 * 2; // 小文件最大2M
+    public static final Integer SMALL_FILE_MAX_SIZE = 1024 * 1024 * 10; // 小文件最大10M
 
     public static final Integer MAX_FILE_SIZE = 1024 * 1024 * 100; // 大文件最大100M
 

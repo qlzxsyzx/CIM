@@ -6,5 +6,5 @@ import lombok.Data;
 public class GroupItemVo {
     private GroupVo group;
 
-    private GroupMemberVo groupMember;
+    private GroupSettingVo groupSetting;
 }

@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
 @Slf4j
 @Service
 public class ImageServiceImpl implements ImageService {
-    public static final Integer IMAGE_MAX_SIZE = 1024 * 1024 * 2; //2M
+    public static final Integer IMAGE_MAX_SIZE = 1024 * 1024 * 5; //5M
 
     @Autowired
     private MinioProperties minioProperties;
@@ -79,7 +79,7 @@ public class ImageServiceImpl implements ImageService {
         String originalFilename = file.getOriginalFilename();
         long size = file.getSize();
         if (size > IMAGE_MAX_SIZE) {
-            return ResponseEntity.fail( "图片大小超过2M");
+            return ResponseEntity.fail( "图片大小超过5M");
         }
         // 获取文件扩展名
         Assert.notNull(originalFilename, "文件名不能为空");

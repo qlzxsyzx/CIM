@@ -8,6 +8,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,6 +20,9 @@ public class UserInfoServiceImpl implements UserInfoService {
 
     @Override
     public Map<Long, UserInfoVo> getUserIdAndUserInfoMap(List<Long> userIdList) {
+        if (userIdList == null || userIdList.isEmpty()){
+            return Collections.emptyMap();
+        }
         List<UserInfo> batchUserInfo = userFeignClient.getBatchUserInfo(userIdList);
         return batchUserInfo.stream().collect(Collectors.toMap(UserInfo::getUserId, this::convertToUserInfoVo));
     }

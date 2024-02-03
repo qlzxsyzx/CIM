@@ -17,9 +17,6 @@ spring:
     port: 5672
     username: guest
     password: guest
-client:
-  permit-all:
-    paths: /friend/**,/chat/**
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true

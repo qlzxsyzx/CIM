@@ -96,7 +96,7 @@ public class LoginController {
         userInfo.setLoginPlatform(loginPlatform);
         String realIP = IPUtil.getRealIP(request);
         userInfo.setLoginIp(realIP);
-        userInfo.setLoginAddress(IPUtil.getRealAddress(realIP));
+//        userInfo.setLoginAddress(IPUtil.getRealAddress(realIP));
         userInfo.setLastLoginTime(LocalDateTime.now());
         userInfo.setLoginPlatform(loginPlatform);
         userInfoService.updateById(userInfo);

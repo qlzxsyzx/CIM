@@ -9,6 +9,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,8 +24,11 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
     }
 
     @Override
-    public Map<Long, ChatMessageVo> getFriendRoomIdAndLatestMessageMap(List<Long> roomIds) {
+    public Map<Long, ChatMessageVo> getRoomIdAndLatestMessageMap(List<Long> roomIds) {
         List<ChatMessage> chatMessages = baseMapper.listLatestMessageGroupByRoomId(roomIds);
+        if (chatMessages == null || chatMessages.isEmpty()){
+            return Collections.emptyMap();
+        }
         return chatMessages.stream().collect(Collectors.toMap(ChatMessage::getRoomId, this::convertToChatMessageVo));
     }
 

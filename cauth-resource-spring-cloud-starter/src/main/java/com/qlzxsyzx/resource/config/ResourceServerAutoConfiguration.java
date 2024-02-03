@@ -48,8 +48,10 @@ public class ResourceServerAutoConfiguration extends ResourceServerConfigurerAda
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
-        for (String path : permitAllProperties.getPaths()) {
-            http.authorizeRequests().antMatchers(path).permitAll();
+        if(permitAllProperties.getPaths() != null) {
+            for (String path : permitAllProperties.getPaths()) {
+                http.authorizeRequests().antMatchers(path).permitAll();
+            }
         }
         http.csrf().disable()
                 .sessionManagement()

@@ -10,5 +10,5 @@ import java.util.Map;
 public interface ChatMessageService extends IService<ChatMessage> {
     ChatMessage getLatestMessageByRoomId(Long roomId);
 
-    Map<Long, ChatMessageVo> getFriendRoomIdAndLatestMessageMap(List<Long> roomIds);
+    Map<Long, ChatMessageVo> getRoomIdAndLatestMessageMap(List<Long> roomIds);
 }

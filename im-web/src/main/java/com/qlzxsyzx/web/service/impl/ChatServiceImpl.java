@@ -62,43 +62,45 @@ public class ChatServiceImpl implements ChatService {
         List<RecentChat> groupChat = recentChats.stream().filter(recentChat -> recentChat.getType() == 1).collect(Collectors.toList());
         // 私聊
         if (!singleChat.isEmpty()) {
-            List<Long> friendIdList = singleChat.stream().map(RecentChat::getToUserId).collect(Collectors.toList());
-            // 获取friendVo
-            Map<Long, FriendVo> userIdFriendVoMap = friendService.getUserIdFriendVoMap(userId, friendIdList);
-            // 获取userInfoVo
-            Map<Long, UserInfoVo> userIdUserInfoVoMap = userInfoService.getUserIdAndUserInfoMap(friendIdList);
             // 获取每个聊天室最新一条消息
             List<Long> roomIds = singleChat.stream().map(RecentChat::getRoomId).collect(Collectors.toList());
-            Map<Long, ChatMessageVo> latestMessageMap = chatMessageService.getFriendRoomIdAndLatestMessageMap(roomIds);
+            Map<Long, ChatMessageVo> latestMessageMap = chatMessageService.getRoomIdAndLatestMessageMap(roomIds);
             for (RecentChat recentChat : singleChat) {
                 RecentChatVo recentChatVo = new RecentChatVo();
                 BeanUtils.copyProperties(recentChat, recentChatVo);
                 ChatItemVo chatItemVo = new ChatItemVo();
                 chatItemVo.setRecentChat(recentChatVo);
-                chatItemVo.setFriend(userIdFriendVoMap.get(recentChat.getToUserId()));
-                chatItemVo.setUserInfo(userIdUserInfoVoMap.get(recentChat.getToUserId()));
                 chatItemVo.setLastMessage(latestMessageMap.get(recentChat.getRoomId()));
                 chatItemVos.add(chatItemVo);
             }
         }
         // 群聊
         if (!groupChat.isEmpty()) {
-            // 获取群聊信息
-            List<Long> groupIds = groupChat.stream().map(RecentChat::getGroupId).collect(Collectors.toList());
-            Map<Long, GroupVo> groupIdGroupVoMap = groupService.getGroupIdAndGroupVoMap(groupIds);
-            // 获取我的群成员信息
-            Map<Long, GroupMemberVo> groupIdMemberVoMap = groupMemberService.getGroupIdAndGroupMemberVoMap(userId, groupIds);
             // 获取每个群聊的最新一条消息
             List<Long> roomIds = groupChat.stream().map(RecentChat::getRoomId).collect(Collectors.toList());
-            Map<Long, ChatMessageVo> latestMessageMap = chatMessageService.getFriendRoomIdAndLatestMessageMap(roomIds);
+            Map<Long, ChatMessageVo> latestMessageMap = chatMessageService.getRoomIdAndLatestMessageMap(roomIds);
+            // 查询最新消息发送者的信息
+            List<Long> senderIds = latestMessageMap.values().stream()
+                    .map(ChatMessageVo::getSenderId)
+                    .filter(senderId -> !senderId.equals(userId)).collect(Collectors.toList());
+            // 获取userInfoVo
+            Map<Long, UserInfoVo> userIdUserInfoVoMap = userInfoService.getUserIdAndUserInfoMap(senderIds);
             for (RecentChat recentChat : groupChat) {
                 RecentChatVo recentChatVo = new RecentChatVo();
                 BeanUtils.copyProperties(recentChat, recentChatVo);
                 ChatItemVo chatItemVo = new ChatItemVo();
                 chatItemVo.setRecentChat(recentChatVo);
-                chatItemVo.setGroup(groupIdGroupVoMap.get(recentChat.getGroupId()));
-                chatItemVo.setGroupMember(groupIdMemberVoMap.get(recentChat.getGroupId()));
-                chatItemVo.setLastMessage(latestMessageMap.get(recentChat.getRoomId()));
+                if (!latestMessageMap.isEmpty()) {
+                    ChatMessageVo latestMessage = latestMessageMap.get(recentChat.getRoomId());
+                    chatItemVo.setLastMessage(latestMessage);
+                    if (!latestMessage.getSenderId().equals(userId)) {
+                        GroupMemberItemVo groupMemberItemVo = new GroupMemberItemVo();
+                        groupMemberItemVo.setUserInfo(userIdUserInfoVoMap.get(latestMessage.getSenderId()));
+                        GroupMember member = groupMemberService.getByUserIdAndGroupId(latestMessage.getSenderId(), recentChat.getGroupId());
+                        groupMemberItemVo.setMember(groupMemberService.convertToGroupMemberVo(member));
+                        chatItemVo.setSender(groupMemberItemVo);
+                    }
+                }
                 chatItemVos.add(chatItemVo);
             }
         }
@@ -173,6 +175,7 @@ public class ChatServiceImpl implements ChatService {
         BeanUtils.copyProperties(createMessageDto, chatMessage);
         chatMessage.setMessageId(idGeneratorClient.generate());
         chatMessage.setSenderId(userId);
+        chatMessage.setCreateTime(LocalDateTime.now());
         chatMessageService.save(chatMessage);
         ChatMessageVo chatMessageVo = new ChatMessageVo();
         BeanUtils.copyProperties(chatMessage, chatMessageVo);
