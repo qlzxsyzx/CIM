@@ -6,11 +6,11 @@ import java.time.LocalDateTime;
 
 @Data
 public class ApplyFriendMessageVo {
-    private Long id;
+    private String id;
 
     private UserInfoVo userInfo;
 
-    private Long toUserId;
+    private String toUserId;
 
     private String applyReason;
 
