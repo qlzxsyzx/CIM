@@ -4,9 +4,9 @@ import lombok.Data;
 
 @Data
 public class FileVo {
-    private Long recordId;
+    private String recordId;
 
     private String fileName;
 
-    private Long[] segmentIds;
+    private String[] segmentIds;
 }

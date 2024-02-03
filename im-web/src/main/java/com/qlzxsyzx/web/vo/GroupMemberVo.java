@@ -4,11 +4,11 @@ import lombok.Data;
 
 @Data
 public class GroupMemberVo {
-    private Long id;
+    private String id;
 
-    private Long groupId;
+    private String groupId;
 
-    private Long userId;
+    private String userId;
 
     private Integer role; // 1普通，2管理员，3群主
 
