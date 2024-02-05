@@ -20,6 +20,8 @@ public class RecentChatVo {
 
     private Integer status;
 
+    private Integer top;
+
     private Integer unreadCount;
 
     private LocalDateTime createTime;

@@ -18,11 +18,11 @@ public class Friend {
 
     private String remark;
 
-    // 添加成功就生成
-    private Long roomId;
+    private Long roomId;        // 添加成功就生成
 
-    // 0删除，1正常，2被删除
-    private Integer status;
+    private Integer status;     // 0删除，1正常，2拉黑
+
+    private Integer promptStatus; // 0不提示，正常
 
     private LocalDateTime createTime;
 }

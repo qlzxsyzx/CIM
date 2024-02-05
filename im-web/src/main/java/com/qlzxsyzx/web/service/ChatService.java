@@ -13,4 +13,6 @@ public interface ChatService {
     ResponseEntity createSingleChat(Long userId, Long friendId);
 
     ResponseEntity createGroupChat(Long userId, Long groupId);
+
+    ResponseEntity topChat(Long userId, Long id, Integer status);
 }

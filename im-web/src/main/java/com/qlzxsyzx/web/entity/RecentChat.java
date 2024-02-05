@@ -22,7 +22,9 @@ public class RecentChat {
 
     private Integer type; // 0-私聊，1-群聊
 
-    private Integer status; // 0 不提醒，1 正常, 2不显示
+    private Integer status; // 0 不提醒，1 正常
+
+    private Integer top; // 0 不置顶，1 置顶
 
     private Integer unreadCount;
 

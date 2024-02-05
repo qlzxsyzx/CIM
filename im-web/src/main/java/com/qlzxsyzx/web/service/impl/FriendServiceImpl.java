@@ -3,17 +3,11 @@ package com.qlzxsyzx.web.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qlzxsyzx.common.ResponseEntity;
 import com.qlzxsyzx.web.dto.ApplyFriendDto;
-import com.qlzxsyzx.web.entity.ApplyFriendMessage;
-import com.qlzxsyzx.web.entity.ChatRoom;
-import com.qlzxsyzx.web.entity.Friend;
-import com.qlzxsyzx.web.entity.UserInfo;
+import com.qlzxsyzx.web.entity.*;
 import com.qlzxsyzx.web.feign.IdGeneratorClient;
 import com.qlzxsyzx.web.mapper.FriendMapper;
 import com.qlzxsyzx.web.service.*;
-import com.qlzxsyzx.web.vo.ApplyFriendMessageVo;
-import com.qlzxsyzx.web.vo.FriendItemVo;
-import com.qlzxsyzx.web.vo.FriendVo;
-import com.qlzxsyzx.web.vo.UserInfoVo;
+import com.qlzxsyzx.web.vo.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -172,7 +166,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
 
     @Override
     public ResponseEntity getFriendList(Long userId) {
-        List<Friend> friendList = query().eq("user_id", userId).in("status", Arrays.asList(1, 2)).list();
+        List<Friend> friendList = query().eq("user_id", userId).eq("status", 1).list();
         if (friendList.isEmpty()) {
             return ResponseEntity.success(new ArrayList<>());
         }
@@ -240,6 +234,96 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
                 .eq("room_id", roomId).one();
     }
 
+    @Override
+    public ResponseEntity blockFriend(Long userId, Long friendId) {
+        // 先判断是否是好友
+        Friend friend = getFriend(userId, friendId);
+        if (friend == null) {
+            return ResponseEntity.fail("你们不是好友关系");
+        }
+        Long blackItemId = idGeneratorClient.generate();
+        // 实现黑名单逻辑
+        // 先检查是否已在黑名单
+        if (blackListService.isExistBlackList(userId, friendId)) {
+            return ResponseEntity.fail("已在黑名单中");
+        }
+        BlackListItem blackListItem = new BlackListItem();
+        blackListItem.setId(blackItemId);
+        blackListItem.setUserId(userId);
+        blackListItem.setBlackUserId(friendId);
+        blackListService.save(blackListItem);
+        friend.setStatus(2);
+        updateById(friend);
+        return ResponseEntity.ok("添加黑名单成功");
+    }
+
+    @Override
+    public ResponseEntity removeBlackList(Long userId, Long friendId) {
+        // 先判断是否是好友
+        Friend friend = getFriend(userId, friendId);
+        if (friend == null) {
+            return ResponseEntity.fail("你们不是好友关系");
+        }
+        // 实现移除黑名单逻辑
+        // 先检查是否在黑名单
+        BlackListItem blackListItem = blackListService.getBlackListItem(userId, friendId);
+        if (blackListItem == null) {
+            return ResponseEntity.fail("不在黑名单中");
+        }
+        blackListService.removeById(blackListItem.getId());
+        friend.setStatus(0);
+        return ResponseEntity.ok("移除黑名单成功");
+    }
+
+    @Override
+    public ResponseEntity removeFriend(Long userId, Long friendId) {
+        // 先判断是否是好友
+        Friend friend = getFriend(userId, friendId);
+        if (friend == null) {
+            return ResponseEntity.fail("你们不是好友关系");
+        }
+        // 实现移除好友逻辑
+        friend.setStatus(0);
+        updateById(friend);
+        return ResponseEntity.ok("移除好友成功");
+    }
+
+    @Override
+    public ResponseEntity updatePromptStatus(Long userId, Long id, Integer status) {
+        // 判断是否是好友
+        Friend friend = getById(id);
+        if (friend == null || !friend.getUserId().equals(userId)) {
+            return ResponseEntity.fail("好友不存在");
+        }
+        friend.setPromptStatus(status);
+        updateById(friend);
+        return ResponseEntity.ok("修改成功");
+    }
+
+    @Override
+    public ResponseEntity getBlackList(Long userId) {
+        // 查询黑名单
+        List<BlackListItem> blackListItemList = blackListService.query().eq("user_id", userId).list();
+        List<Long> blackUserIdList = blackListItemList.stream().map(BlackListItem::getBlackUserId).collect(Collectors.toList());
+        // 查询黑名单用户信息Map
+        Map<Long, UserInfoVo> userIdAndUserInfoMap = userInfoService.getUserIdAndUserInfoMap(blackUserIdList);
+        // 查询friend remark
+        Map<Long, FriendVo> userIdFriendVoMap = getUserIdFriendVoMap(userId, blackUserIdList);
+        // 封装返回结果
+        List<BlackListItemVo> blackListVoList = new ArrayList<>();
+        for (BlackListItem blackListItem : blackListItemList) {
+            FriendVo friendVo = userIdFriendVoMap.get(blackListItem.getBlackUserId());
+            UserInfoVo userInfoVo = userIdAndUserInfoMap.get(blackListItem.getBlackUserId());
+            if (friendVo != null && userInfoVo != null) {
+                BlackListItemVo blackListItemVo = new BlackListItemVo();
+                BeanUtils.copyProperties(blackListItem, blackListItemVo);
+                blackListItemVo.setUserInfo(userInfoVo);
+                blackListItemVo.setRemark(friendVo.getRemark());
+                blackListVoList.add(blackListItemVo);
+            }
+        }
+        return ResponseEntity.success(blackListVoList);
+    }
 
     private Friend getFriend(Long userId, Long friendId) {
         return query().eq("user_id", userId).eq("friend_id", friendId).one();

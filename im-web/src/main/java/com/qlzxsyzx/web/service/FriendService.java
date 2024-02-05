@@ -25,4 +25,14 @@ public interface FriendService extends IService<Friend> {
     ResponseEntity getApplyFriendMessageList(Long userId);
 
     Friend getFriendByUserIdAndRoomId(Long userId, Long roomId);
+
+    ResponseEntity blockFriend(Long userId, Long friendId);
+
+    ResponseEntity removeBlackList(Long userId, Long friendId);
+
+    ResponseEntity removeFriend(Long userId, Long friendId);
+
+    ResponseEntity updatePromptStatus(Long userId, Long id, Integer status);
+
+    ResponseEntity getBlackList(Long userId);
 }

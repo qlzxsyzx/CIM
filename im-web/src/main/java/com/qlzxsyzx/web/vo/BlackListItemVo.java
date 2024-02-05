@@ -5,18 +5,13 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class FriendVo {
+public class BlackListItemVo {
     private Long id;
 
-    private Long userId;
-
-    private Long friendId;
+    private UserInfoVo userInfo;
 
     private String remark;
 
-    private Integer promptStatus;
-
-    private Long roomId;
-
+    // 加入黑名单的时间
     private LocalDateTime createTime;
 }

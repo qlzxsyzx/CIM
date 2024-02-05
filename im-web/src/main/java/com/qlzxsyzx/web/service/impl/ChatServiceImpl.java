@@ -323,6 +323,19 @@ public class ChatServiceImpl implements ChatService {
         return ResponseEntity.success(recentChatService.convertToVo(recentChat));
     }
 
+    @Override
+    public ResponseEntity topChat(Long userId, Long id, Integer status) {
+        // 查询recentChat是否存在
+        RecentChat recentChat = recentChatService.getById(id);
+        if (recentChat == null || !recentChat.getUserId().equals(userId)) {
+            return ResponseEntity.fail("会话不存在");
+        }
+        // 修改top状态
+        recentChat.setTop(status);
+        recentChatService.updateById(recentChat);
+        return ResponseEntity.ok("修改成功");
+    }
+
     private ChatMessageVo convertToVo(ChatMessage chatMessage) {
         ChatMessageVo chatMessageVo = new ChatMessageVo();
         BeanUtils.copyProperties(chatMessage, chatMessageVo);

@@ -40,4 +40,9 @@ public class ChatController {
                                              @PathVariable("pageNum") Integer pageNum, @PathVariable("pageSize") Integer pageSize) {
         return chatService.getChatMessageList(userId, roomId, pageNum, pageSize);
     }
+
+    @PostMapping("/topChat/{id}/{status}")
+    public ResponseEntity topChat(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id, @PathVariable("status") Integer status) {
+        return chatService.topChat(userId, id, status);
+    }
 }

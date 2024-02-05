@@ -46,14 +46,29 @@ public class FriendController {
         return friendService.getApplyFriendMessageList(userId);
     }
 
+    @GetMapping("/getBlackList")
+    public ResponseEntity getBlackList(@AuthenticationDetails("userId") Long userId) {
+        return friendService.getBlackList(userId);
+    }
+
     @PostMapping("/blockFriend/{friendId}")
     public ResponseEntity blockFriend(@AuthenticationDetails("userId") Long userId, @PathVariable("friendId") Long friendId) {
-        return blackListService.blockFriend(userId, friendId);
+        return friendService.blockFriend(userId, friendId);
     }
 
     @PostMapping("/removeBlackList/{friendId}")
     public ResponseEntity removeBlackList(@AuthenticationDetails("userId") Long userId, @PathVariable("friendId") Long friendId) {
-        return blackListService.removeBlackList(userId, friendId);
+        return friendService.removeBlackList(userId, friendId);
+    }
+
+    @PostMapping("/removeFriend/{friendId}")
+    public ResponseEntity removeFriend(@AuthenticationDetails("userId") Long userId, @PathVariable("friendId") Long friendId) {
+        return friendService.removeFriend(userId, friendId);
+    }
+
+    @PostMapping("/updatePromptStatus/{id}/{status}")
+    public ResponseEntity updatePromptStatus(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id, @PathVariable("status") Integer status) {
+        return friendService.updatePromptStatus(userId, id, status);
     }
 
     @GetMapping("/getFriendList")
