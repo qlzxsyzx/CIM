@@ -19,7 +19,7 @@ public class ChatMessageVo {
 
     private String content;
 
-    private Long recordId;
+    private FileDetailsVo fileInfo;
 
     private LocalDateTime createTime;
 }

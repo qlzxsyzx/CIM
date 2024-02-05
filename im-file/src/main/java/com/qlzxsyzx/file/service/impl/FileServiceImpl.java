@@ -7,18 +7,27 @@ import com.qlzxsyzx.file.config.MinioProperties;
 import com.qlzxsyzx.file.dto.BigFileInfoDto;
 import com.qlzxsyzx.file.dto.BigFilePartDto;
 import com.qlzxsyzx.file.dto.MergeFileDto;
+import com.qlzxsyzx.file.entity.DownloadRecord;
 import com.qlzxsyzx.file.entity.UploadRecord;
 import com.qlzxsyzx.file.entity.UploadSegment;
+import com.qlzxsyzx.file.exception.DownloadException;
 import com.qlzxsyzx.file.feign.IdGeneratorClient;
 import com.qlzxsyzx.file.service.*;
+import com.qlzxsyzx.file.vo.FileDetailsVo;
 import com.qlzxsyzx.file.vo.FileVo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +64,7 @@ public class FileServiceImpl implements FileService {
         String originalFilename = file.getOriginalFilename();
         long size = file.getSize();
         if (size > SMALL_FILE_MAX_SIZE) {
-            return ResponseEntity.fail("文件大小超过2M");
+            return ResponseEntity.fail("文件大小超过10M");
         }
         // 获取文件扩展名
         Assert.notNull(originalFilename, "文件名不能为空");
@@ -99,13 +108,13 @@ public class FileServiceImpl implements FileService {
     @Override
     public ResponseEntity initUploadBigFile(BigFileInfoDto bigFileInfoDto) {
         if (bigFileInfoDto.getFileSize() <= SMALL_FILE_MAX_SIZE) {
-            return ResponseEntity.fail("文件大小不能小于2M");
+            return ResponseEntity.fail("文件大小不能小于10M");
         }
         if (bigFileInfoDto.getFileSize() > MAX_FILE_SIZE) {
-            return ResponseEntity.fail("文件大小不能大于100M");
+            return ResponseEntity.fail("文件大小不能大于1000M");
         }
         if (bigFileInfoDto.getSegmentSize() < MIN_SEGMENT_SIZE && bigFileInfoDto.getSegmentSize() > MAX_SEGMENT_SIZE) {
-            return ResponseEntity.fail("分片大小必须在2M到5M之间");
+            return ResponseEntity.fail("分片大小必须在2M到10M之间");
         }
         // 记录大文件信息，返回recordId
         Long recordId = idGeneratorClient.generate();
@@ -213,5 +222,104 @@ public class FileServiceImpl implements FileService {
             return ResponseEntity.fail("上传失败");
         }
         return ResponseEntity.success(null);
+    }
+
+    @Override
+    public FileDetailsVo getFileDetails(Long recordId) {
+        UploadRecord record = uploadRecordService.getById(recordId);
+        return record == null ?
+                null : covertToFileDetailsVo(record);
+    }
+
+    @Override
+    public FileDetailsVo covertToFileDetailsVo(UploadRecord uploadRecord) {
+        FileDetailsVo fileDetailsVo = new FileDetailsVo();
+        BeanUtils.copyProperties(uploadRecord, fileDetailsVo);
+        return fileDetailsVo;
+    }
+
+    @Override
+    public void downloadSmallFile(Long userId, Long recordId, HttpServletResponse response) {
+        UploadRecord record = uploadRecordService.getById(recordId);
+        if (record == null || record.getUploadStatus() != 2) {
+            throw new DownloadException("文件不存在");
+        }
+        if (record.getFileSize() > SMALL_FILE_MAX_SIZE) {
+            throw new DownloadException("文件超过限制大小");
+        }
+        response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        response.setHeader("Content-Disposition", "attachment;filename=" + record.getRealName());
+        String bucketName = record.getBucketName();
+        String objectName = record.getObjectName();
+        try (InputStream inputStream = minioService.downloadForStream(bucketName, objectName);
+             ServletOutputStream outputStream = response.getOutputStream()) {
+            // 读取文件并写入响应
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            outputStream.flush();
+        } catch (IOException e) {
+            throw new DownloadException(e);
+        }
+    }
+
+    @Override
+    public ResponseEntity initDownloadBigFile(Long userId, Long recordId) {
+        UploadRecord record = uploadRecordService.getById(recordId);
+        if (record == null || record.getUploadStatus() != 2) {
+            throw new DownloadException("文件不存在");
+        }
+        if (record.getFileSize() <= SMALL_FILE_MAX_SIZE) {
+            return ResponseEntity.fail("文件大小不能小于10M");
+        }
+        if (record.getFileSize() > MAX_FILE_SIZE) {
+            return ResponseEntity.fail("文件大小不能大于1000M");
+        }
+        // 生成下载信息
+        DownloadRecord downloadRecord = new DownloadRecord();
+        downloadRecord.setRecordId(idGeneratorClient.generate());
+        downloadRecord.setUserId(userId);
+        downloadRecord.setFileName(record.getFileName());
+        downloadRecord.setRealName(record.getRealName());
+        downloadRecord.setExt(record.getExt());
+        downloadRecord.setFileSize(record.getFileSize());
+        downloadRecord.setDownloadTime(LocalDateTime.now());
+        downloadRecord.setDownloadStatus(1);
+        downloadRecord.setBucketName(record.getBucketName());
+        downloadRecord.setObjectName(record.getObjectName());
+        downloadRecordService.save(downloadRecord);
+        return ResponseEntity.success(covertToFileDetailsVo(record));
+    }
+
+    @Override
+    public void downloadBigFilePart(Long userId, Long recordId, Integer partNum, Long partSize, HttpServletResponse response) {
+        UploadRecord record = uploadRecordService.getById(recordId);
+        if (record == null || record.getUploadStatus() != 2) {
+            throw new DownloadException("文件不存在");
+        }
+        if (partSize < MIN_SEGMENT_SIZE) {
+            throw new DownloadException("分片大小不能小于2M");
+        }
+        if (partSize > MAX_SEGMENT_SIZE) {
+            throw new DownloadException("分片大小不能大于10M");
+        }
+        response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+        response.setHeader("Content-Disposition", "attachment;filename=" + record.getFileName() + "_" + partNum + ".part");
+        String bucketName = record.getBucketName();
+        String objectName = record.getObjectName();
+        try (InputStream inputStream = minioService.downloadPartForStream(bucketName, objectName, partNum, partSize);
+             ServletOutputStream outputStream = response.getOutputStream()) {
+            // 读取文件并写入响应
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            outputStream.flush();
+        } catch (IOException e) {
+            throw new DownloadException(e);
+        }
     }
 }

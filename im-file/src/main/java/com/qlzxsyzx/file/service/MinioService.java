@@ -12,9 +12,10 @@ public interface MinioService {
     // 上传文件
     void uploadFile(MultipartFile file, String bucketName, String objectName);
 
-
     // 下载文件
     InputStream downloadForStream(String bucketName, String objectName);
+
+    InputStream downloadPartForStream(String bucketName, String objectName, Integer partNum, Long partSize);
 
     // 删除文件
     void remove(String bucketName, String objectName);

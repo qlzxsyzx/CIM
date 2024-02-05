@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qlzxsyzx.common.ResponseEntity;
 import com.qlzxsyzx.web.dto.CreateMessageDto;
 import com.qlzxsyzx.web.entity.*;
+import com.qlzxsyzx.web.feign.FileFeignClient;
 import com.qlzxsyzx.web.feign.IdGeneratorClient;
 import com.qlzxsyzx.web.mq.MQSendService;
 import com.qlzxsyzx.web.service.*;
@@ -49,6 +50,9 @@ public class ChatServiceImpl implements ChatService {
 
     @Autowired
     private MQSendService mqSendService;
+
+    @Autowired
+    private FileFeignClient fileFeignClient;
 
     @Override
     public ResponseEntity getRecentChatList(Long userId) {
@@ -204,9 +208,7 @@ public class ChatServiceImpl implements ChatService {
                     .eq("room_id", roomId)
                     .orderByDesc("create_time")
                     .page(page);
-            // 转化成vo
-            List<ChatMessageVo> chatMessageVoList = chatMessagePage.getRecords().stream().map(this::convertToVo).collect(Collectors.toList());
-            return ResponseEntity.success(chatMessageVoList);
+            return ResponseEntity.success(getFileInfo(chatMessagePage));
         }
         if (type == 1) {
             // 群聊，判断是否是群成员
@@ -237,10 +239,20 @@ public class ChatServiceImpl implements ChatService {
             }
             // 获取最近聊天记录 群聊，获取最近聊天记录
             // 转化成vo
-            List<ChatMessageVo> chatMessageVoList = chatMessagePage.getRecords().stream().map(this::convertToVo).collect(Collectors.toList());
-            return ResponseEntity.success(chatMessageVoList);
+            return ResponseEntity.success(getFileInfo(chatMessagePage));
         }
         return ResponseEntity.success(new ArrayList<>());
+    }
+
+    private List<ChatMessageVo> getFileInfo(Page<ChatMessage> chatMessagePage) {
+        return chatMessagePage.getRecords().stream()
+                .map(chatMessage -> {
+                    ChatMessageVo chatMessageVo = convertToVo(chatMessage);
+                    if (chatMessage.getRecordId() != null) {
+                        chatMessageVo.setFileInfo(fileFeignClient.getFileDetails(chatMessage.getRecordId()));
+                    }
+                    return chatMessageVo;
+                }).collect(Collectors.toList());
     }
 
     @Override

@@ -17,11 +17,11 @@ import java.util.List;
 public class MinioServiceImpl implements MinioService {
     public static final Integer SMALL_FILE_MAX_SIZE = 1024 * 1024 * 10; // 小文件最大10M
 
-    public static final Integer MAX_FILE_SIZE = 1024 * 1024 * 100; // 大文件最大100M
+    public static final Integer MAX_FILE_SIZE = 1024 * 1024 * 1000; // 大文件最大1000M
 
     public static final Integer MIN_SEGMENT_SIZE = 1024 * 1024 * 2; // 分片最小2M
 
-    public static final Integer MAX_SEGMENT_SIZE = 1024 * 1024 * 5; // 分片最大5M
+    public static final Integer MAX_SEGMENT_SIZE = 1024 * 1024 * 10; // 分片最大10M
 
     @Autowired
     private MinioClient minioClient;
@@ -64,6 +64,21 @@ public class MinioServiceImpl implements MinioService {
             return minioClient.getObject(GetObjectArgs.builder().bucket(bucketName).object(objectName).build());
         } catch (Exception e) {
             throw new RuntimeException("下载文件失败", e);
+        }
+    }
+
+    @Override
+    public InputStream downloadPartForStream(String bucketName, String objectName, Integer partNum, Long partSize) {
+        if (StringUtils.isEmpty(bucketName) || StringUtils.isEmpty(objectName)) {
+            throw new RuntimeException("桶名或对象名为空");
+        }
+        try {
+            return minioClient.getObject(GetObjectArgs.builder().bucket(bucketName).object(objectName)
+                    .offset(partNum * partSize)
+                    .length(partSize)
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException("下载分片失败", e);
         }
     }
 
