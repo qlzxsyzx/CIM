@@ -2,26 +2,18 @@ package com.qlzxsyzx.web.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qlzxsyzx.common.ResponseEntity;
-import com.qlzxsyzx.web.dto.CreateGroupDto;
-import com.qlzxsyzx.web.entity.ChatRoom;
-import com.qlzxsyzx.web.entity.Group;
-import com.qlzxsyzx.web.entity.GroupMember;
-import com.qlzxsyzx.web.entity.RecentChat;
+import com.qlzxsyzx.web.dto.*;
+import com.qlzxsyzx.web.entity.*;
 import com.qlzxsyzx.web.feign.IdGeneratorClient;
 import com.qlzxsyzx.web.mapper.GroupMapper;
-import com.qlzxsyzx.web.service.ChatRoomService;
-import com.qlzxsyzx.web.service.GroupMemberService;
-import com.qlzxsyzx.web.service.GroupService;
-import com.qlzxsyzx.web.service.RecentChatService;
+import com.qlzxsyzx.web.service.*;
 import com.qlzxsyzx.web.vo.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +31,12 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     @Autowired
     private RecentChatService recentChatService;
 
+    @Autowired
+    private GroupNoticeService groupNoticeService;
+
+    @Autowired
+    private UserInfoService userInfoService;
+
     @Override
     public Group getGroupById(Long groupId) {
         return query().eq("id", groupId).one();
@@ -46,10 +44,10 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
 
     @Override
     public ResponseEntity getGroupList(Long userId) {
-        // 先在group_member表中查询该用户所在的群组
+        // 先在group_member表中查询该用户所在的群组, 没有退出和被T的
         List<GroupMember> groupMembers = groupMemberService.query()
                 .eq("user_id", userId)
-                .eq("exit_type", 0).list();
+                .in("exit_type", Arrays.asList(0, 2)).list();
         if (groupMembers.isEmpty()) {
             return ResponseEntity.success(new ArrayList<>());
         }
@@ -57,12 +55,13 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         List<Long> groupIds = groupMembers.stream().map(GroupMember::getGroupId).collect(Collectors.toList());
         // 根据群组id列表查询群组列表
         List<Group> groups = query().in("id", groupIds).ne("status", 0).list();
-        Map<Long, GroupVo> groupVoMap = groups.stream().collect(Collectors.toMap(Group::getId, this::convertToGroupVo));
+        Map<Long, GroupSettingVo> groupSettingMap = groupMemberService.getGroupIdAndGroupSettingVoMap(userId, groupIds);
         List<GroupItemVo> groupItemVos = new ArrayList<>();
-        for (GroupMember groupMember : groupMembers) {
+        for (Group group : groups) {
             GroupItemVo groupItemVo = new GroupItemVo();
-            groupItemVo.setGroup(groupVoMap.get(groupMember.getGroupId()));
-            groupItemVo.setGroupSetting(groupMemberService.convertToGroupSettingVo(groupMember));
+            groupItemVo.setGroup(convertToGroupVo(group));
+            // 备注
+            groupItemVo.setGroupSetting(groupSettingMap.get(group.getId()));
             groupItemVos.add(groupItemVo);
         }
         return ResponseEntity.success(groupItemVos);
@@ -106,8 +105,6 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         members.add(groupMember);
         groupMemberService.saveBatch(members);
         // 4.给user创建一条recentChat
-        GroupVo groupVo = new GroupVo();
-        BeanUtils.copyProperties(group, groupVo);
         RecentChat recentChat = new RecentChat();
         recentChat.setId(ids[3 + memberIdList.size()]);
         recentChat.setUserId(userId);
@@ -129,9 +126,151 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     }
 
     @Override
-    public Map<Long, GroupVo> getGroupIdAndGroupVoMap(List<Long> groupIds) {
-        List<Group> groups = query().in("id", groupIds).list();
-        return groups.stream().collect(Collectors.toMap(Group::getId, this::convertToGroupVo));
+    public ResponseEntity getGroupInfo(Long userId, Long groupId) {
+        // 判断群是否存在
+        Group group = query().eq("id", groupId).ne("status", 0).one();
+        if (group == null) {
+            return ResponseEntity.fail("群不存在");
+        }
+        // 判断是否是群成员,展示不同信息
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            // 群成员不存在或者已退出
+            NotMemberGroupInfoVo notMemberGroupInfoVo = getNotMemberGroupInfoVo(group);
+            // 获取前10位群成员头像，以role排序
+            List<GroupMember> members = groupMemberService.query().eq("group_id", groupId)
+                    .eq("exit_type", 0)
+                    .orderByDesc("role")
+                    .orderByAsc("create_time").last("limit 10").list();
+            // 查出头像
+            List<UserInfo> userInfoList = userInfoService.getUserInfoList(
+                    members.stream().map(GroupMember::getUserId).collect(Collectors.toList()));
+            notMemberGroupInfoVo.setMemberAvatarUrl(userInfoList.stream().map(UserInfo::getAvatarUrl).collect(Collectors.toList()));
+            return ResponseEntity.success(notMemberGroupInfoVo);
+        } else {
+            // 群成员存在
+            GroupInfoVo groupInfoVo = getGroupInfoVo(group);
+            // 我的群设置
+            groupInfoVo.setGroupSetting(groupMemberService.convertToGroupSettingVo(groupMember));
+            // 最新公告
+            groupInfoVo.setLatestNotice(groupNoticeService.getLatestNotice(groupId));
+            // 获取前10位群成员头像，以role排序
+            List<GroupMember> members = groupMemberService.query().eq("group_id", groupId)
+                    .eq("exit_type", 0)
+                    .orderByDesc("role")
+                    .orderByAsc("join_time").last("limit 10").list();
+            // 查出头像
+            List<UserInfo> userInfoList = userInfoService.getUserInfoList(
+                    members.stream().map(GroupMember::getUserId).collect(Collectors.toList()));
+            groupInfoVo
+                    .setMemberAvatarUrl(userInfoList.stream().map(UserInfo::getAvatarUrl).collect(Collectors.toList()));
+            return ResponseEntity.success(groupInfoVo);
+        }
+    }
+
+    @Override
+    public ResponseEntity updateGroupRemark(Long userId, UpdateGroupRemarkDto updateGroupRemarkDto) {
+        Long id = updateGroupRemarkDto.getId();
+        String remark = updateGroupRemarkDto.getRemark();
+        // 先判断是否是群成员
+        GroupMember groupMember = groupMemberService.getById(id);
+        if (groupMember == null || !groupMember.getUserId().equals(userId) || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        // 更新备注
+        groupMember.setGroupNickName(remark);
+        groupMemberService.updateById(groupMember);
+        return ResponseEntity.success("更新成功");
+    }
+
+    @Override
+    public ResponseEntity updateUserNickName(Long userId, UpdateUserNickNameDto updateUserNickNameDto) {
+        Long id = updateUserNickNameDto.getId();
+        String nickName = updateUserNickNameDto.getUserNickName();
+        // 先判断是否是群成员
+        GroupMember groupMember = groupMemberService.getById(id);
+        if (groupMember == null || !groupMember.getUserId().equals(userId) || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        // 更新备注
+        groupMember.setUserNickName(nickName);
+        groupMemberService.updateById(groupMember);
+        return ResponseEntity.success("更新成功");
+    }
+
+    @Override
+    public ResponseEntity updateGroupPromptStatus(Long userId, Long id, Integer status) {
+        // 先判断是否是群成员
+        GroupMember groupMember = groupMemberService.getById(id);
+        if (groupMember == null || !groupMember.getUserId().equals(userId) || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        // 更新群提示状态
+        groupMember.setStatus(status);
+        groupMemberService.updateById(groupMember);
+        return ResponseEntity.success("更新成功");
+    }
+
+    @Override
+    public ResponseEntity updateGroupName(Long userId, UpdateGroupNameDto updateGroupNameDto) {
+        Long groupId = updateGroupNameDto.getGroupId();
+        String name = updateGroupNameDto.getName();
+        // 先判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember == null || !groupMember.getUserId().equals(userId) || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() != 3) {
+            return ResponseEntity.fail("无权修改");
+        }
+        // 更新群名称
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 3) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        group.setName(name);
+        updateById(group);
+        return ResponseEntity.success("更新成功");
+    }
+
+    @Override
+    public ResponseEntity updateGroupAvatar(Long userId, UpdateGroupAvatarDto updateGroupAvatarDto) {
+        Long groupId = updateGroupAvatarDto.getGroupId();
+        String avatar = updateGroupAvatarDto.getAvatarUrl();
+        // 先判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember == null || !groupMember.getUserId().equals(userId) || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() != 3) {
+            return ResponseEntity.fail("无权修改");
+        }
+        // 更新群头像
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 3) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        group.setAvatarUrl(avatar);
+        updateById(group);
+        return ResponseEntity.success("更新成功");
+    }
+
+    private NotMemberGroupInfoVo getNotMemberGroupInfoVo(Group group) {
+        NotMemberGroupInfoVo notMemberGroupInfoVo = new NotMemberGroupInfoVo();
+        BeanUtils.copyProperties(group, notMemberGroupInfoVo);
+        return notMemberGroupInfoVo;
+    }
+
+    private GroupInfoVo getGroupInfoVo(Group group) {
+        GroupInfoVo groupInfoVo = new GroupInfoVo();
+        BeanUtils.copyProperties(group, groupInfoVo);
+        return groupInfoVo;
     }
 
     private GroupVo convertToGroupVo(Group group) {

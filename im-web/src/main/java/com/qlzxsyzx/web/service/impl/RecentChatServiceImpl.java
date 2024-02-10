@@ -22,4 +22,10 @@ public class RecentChatServiceImpl extends ServiceImpl<RecentChatMapper, RecentC
         BeanUtils.copyProperties(recentChat, recentChatVo);
         return recentChatVo;
     }
+
+    @Override
+    public void deleteByUserIdAndRoomId(Long userId, Long roomId) {
+        update().eq("user_id", userId).eq("room_id", roomId).remove();
+    }
+
 }

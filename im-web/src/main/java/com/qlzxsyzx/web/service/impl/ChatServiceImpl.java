@@ -260,7 +260,9 @@ public class ChatServiceImpl implements ChatService {
         // 先查询是否存在
         RecentChat recentChat = recentChatService.query().eq("user_id", userId).eq("to_user_id", friendId).one();
         if (recentChat != null) {
-            return ResponseEntity.error("已存在");
+            ChatItemVo chatItemVo = new ChatItemVo();
+            chatItemVo.setRecentChat(recentChatService.convertToVo(recentChat));
+            return ResponseEntity.success(chatItemVo);
         }
         // 查询是否拉黑或者删除
         BlackListItem blackListItem = blackListService.query().eq("user_id", userId)
@@ -283,9 +285,12 @@ public class ChatServiceImpl implements ChatService {
         recentChat.setRoomId(friend.getRoomId());
         recentChat.setType(0);
         recentChat.setStatus(friend.getStatus());
+        recentChat.setCreateTime(LocalDateTime.now());
         recentChatService.save(recentChat);
-        // 返回一个recentChatVo
-        return ResponseEntity.success(recentChatService.convertToVo(recentChat));
+        // 返回一个chatItemVo
+        ChatItemVo chatItemVo = new ChatItemVo();
+        chatItemVo.setRecentChat(recentChatService.convertToVo(recentChat));
+        return ResponseEntity.success(chatItemVo);
     }
 
     @Override
@@ -293,7 +298,9 @@ public class ChatServiceImpl implements ChatService {
         // 先查询是否存在
         RecentChat recentChat = recentChatService.query().eq("user_id", userId).eq("group_id", groupId).one();
         if (recentChat != null) {
-            return ResponseEntity.error("已存在");
+            ChatItemVo chatItemVo = new ChatItemVo();
+            chatItemVo.setRecentChat(recentChatService.convertToVo(recentChat));
+            return ResponseEntity.success(chatItemVo);
         }
         // 查询群组是否存在
         Group group = groupService.getGroupById(groupId);
@@ -305,9 +312,9 @@ public class ChatServiceImpl implements ChatService {
         if (member == null) {
             return ResponseEntity.fail("你不在该群组中");
         }
-        if (member.getStatus() == 1) {
+        if (member.getExitType() == 1) {
             return ResponseEntity.fail("你已退出该群组");
-        } else if (member.getStatus() == 2) {
+        } else if (member.getExitType() == 2) {
             return ResponseEntity.fail("你已被移出群组");
         }
         // 创建recentChat
@@ -318,9 +325,12 @@ public class ChatServiceImpl implements ChatService {
         recentChat.setRoomId(group.getRoomId());
         recentChat.setType(1);
         recentChat.setStatus(member.getStatus());
+        recentChat.setCreateTime(LocalDateTime.now());
         recentChatService.save(recentChat);
-        // 返回一个recentChatVo
-        return ResponseEntity.success(recentChatService.convertToVo(recentChat));
+        // 返回一个chatItemVo
+        ChatItemVo chatItemVo = new ChatItemVo();
+        chatItemVo.setRecentChat(recentChatService.convertToVo(recentChat));
+        return ResponseEntity.success(chatItemVo);
     }
 
     @Override

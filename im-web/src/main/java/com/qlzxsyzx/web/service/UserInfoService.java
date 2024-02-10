@@ -12,4 +12,6 @@ public interface UserInfoService {
     UserInfo getUserInfoByUsername(String username);
 
     UserInfo getUserInfoByUserId(Long userId);
+
+    List<UserInfo> getUserInfoList(List<Long> userIdList);
 }

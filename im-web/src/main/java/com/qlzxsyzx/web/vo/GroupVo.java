@@ -8,19 +8,9 @@ import java.time.LocalDateTime;
 public class GroupVo {
     private Long id;
 
+    private Long roomId;
+
     private String name;
 
     private String avatarUrl;
-
-    private String description;
-
-    private Long roomId;
-
-    private Integer memberCount;
-
-    private Integer status;
-
-    private LocalDateTime dismissTime;
-
-    private LocalDateTime banTime;
 }

@@ -3,6 +3,7 @@ package com.qlzxsyzx.web.service.impl;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qlzxsyzx.common.ResponseEntity;
 import com.qlzxsyzx.web.dto.ApplyFriendDto;
+import com.qlzxsyzx.web.dto.UpdateRemarkDto;
 import com.qlzxsyzx.web.entity.*;
 import com.qlzxsyzx.web.feign.IdGeneratorClient;
 import com.qlzxsyzx.web.mapper.FriendMapper;
@@ -12,12 +13,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 @Slf4j
 public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> implements FriendService {
 
@@ -36,6 +40,8 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     @Autowired
     private UserInfoService userInfoService;
 
+    @Autowired
+    private RecentChatService recentChatService;
 
     @Override
     public ResponseEntity searchByUsername(String username) {
@@ -51,7 +57,79 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         return ResponseEntity.success(userVo);
     }
 
-    private void addFriend(Long userId, Long friendId, String remark, String friendRemark) {
+    @Override
+    public ResponseEntity applyAddFriend(Long userId, ApplyFriendDto applyFriendDto) {
+        Long toUserId = applyFriendDto.getToUserId();
+        String remark = applyFriendDto.getRemark();
+        String reason = applyFriendDto.getApplyReason();
+        if (userId.equals(toUserId)) {
+            return ResponseEntity.fail("不能添加自己为好友");
+        }
+        // 检查是否被拉黑或者拉黑对方
+        if (blackListService.isExistBlackList(userId, toUserId)) {
+            return ResponseEntity.fail("对方已在黑名单，请先解除");
+        }
+        if (blackListService.isExistBlackList(toUserId, userId)) {
+            return ResponseEntity.fail("您已被对方拉黑，无法添加");
+        }
+        // 检查是否有未处理的好友申请信息
+        ApplyFriendMessage applyTa = applyFriendMessageService.getUntreatedApplyMessageByToUserId(userId, toUserId);
+        if (applyTa != null) {
+            applyTa.setApplyReason(reason);
+            applyTa.setRemark(remark);
+            applyTa.setCreateTime(LocalDateTime.now());
+            applyFriendMessageService.updateById(applyTa);
+            return ResponseEntity.success("发送成功");
+        }
+        // 检查是否有好友关系
+        Friend friend = getFriend(userId, toUserId);
+        if (friend == null) {
+            // 尚未成为好友关系
+            // 先判断对面是否发送了未处理的好友申请
+            ApplyFriendMessage taApplyMe = applyFriendMessageService.getUntreatedApplyMessageByToUserId(toUserId, userId);
+            if (taApplyMe != null) {
+                // 直接添加好友，更新状态为已同意
+                taApplyMe.setStatus(1);
+                addFriendForNoFriendShip(userId, toUserId, remark, taApplyMe.getRemark());
+                return ResponseEntity.ok("发送成功");
+            }
+            // 发送好友申请
+            ApplyFriendMessage applyFriendMessage = new ApplyFriendMessage();
+            applyFriendMessage.setId(idGeneratorClient.generate());
+            applyFriendMessage.setUserId(userId);
+            applyFriendMessage.setToUserId(toUserId);
+            applyFriendMessage.setRemark(remark);
+            applyFriendMessage.setApplyReason(reason);
+            applyFriendMessage.setStatus(0);
+            applyFriendMessageService.save(applyFriendMessage);
+            return ResponseEntity.ok("发送成功");
+        } else {
+            if (friend.getStatus() == 1) {
+                return ResponseEntity.fail("你们已经是好友了");
+            }
+            // 恢复好友关系
+            // 先判断对面是否发送了未处理的好友申请
+            ApplyFriendMessage taApplyMe = applyFriendMessageService.getUntreatedApplyMessageByToUserId(toUserId, userId);
+            if (taApplyMe != null) {
+                // 直接添加好友，更新状态为已同意
+                taApplyMe.setStatus(1);
+                addFriendForFriendShip(friend, remark, taApplyMe.getRemark());
+                return ResponseEntity.ok("发送成功");
+            }
+            // 发送好友申请
+            ApplyFriendMessage applyFriendMessage = new ApplyFriendMessage();
+            applyFriendMessage.setId(idGeneratorClient.generate());
+            applyFriendMessage.setUserId(userId);
+            applyFriendMessage.setToUserId(toUserId);
+            applyFriendMessage.setRemark(remark);
+            applyFriendMessage.setApplyReason(reason);
+            applyFriendMessage.setStatus(0);
+            applyFriendMessageService.save(applyFriendMessage);
+            return ResponseEntity.ok("发送成功");
+        }
+    }
+
+    private void addFriendForNoFriendShip(Long userId, Long friendId, String remark, String friendRemark) {
         Long[] ids = idGeneratorClient.generateIdBatch(3);
         // 生成一个聊天室
         ChatRoom chatRoom = new ChatRoom();
@@ -80,50 +158,23 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         // todo:向MQ发送消息
     }
 
-    @Override
-    public ResponseEntity applyAddFriend(Long userId, ApplyFriendDto applyFriendDto) {
-        Long toUserId = applyFriendDto.getToUserId();
-        String remark = applyFriendDto.getRemark();
-        String reason = applyFriendDto.getApplyReason();
-        if (userId.equals(toUserId)) {
-            return ResponseEntity.fail("不能添加自己为好友");
+
+    private void addFriendForFriendShip(Friend myFriend, String remark, String friendRemark) {
+        // 恢复好友关系
+        Friend taFriend = getFriend(myFriend.getFriendId(), myFriend.getUserId());
+        if (taFriend.getStatus() == 0){
+            taFriend.setPromptStatus(1);
         }
-        // 检查是否被拉黑或者拉黑对方
-        if (blackListService.isExistBlackList(userId, toUserId)) {
-            return ResponseEntity.fail("对方已在黑名单，请先解除");
+        taFriend.setStatus(1);
+        taFriend.setRemark(friendRemark);
+        updateById(taFriend);
+        if (myFriend.getStatus() == 0){
+            myFriend.setPromptStatus(1);
         }
-        if (blackListService.isExistBlackList(toUserId, userId)) {
-            return ResponseEntity.fail("您已被对方拉黑，无法添加");
-        }
-        // 检查是否有好友关系
-        Friend friend = getFriend(userId, toUserId);
-        if (friend != null && friend.getStatus() == 1) {
-            return ResponseEntity.fail("你们已经是好友了");
-        }
-        // 上面判断后是可以发送申请好友的情况
-        // 先判断对面是否发送了未处理的好友申请
-        ApplyFriendMessage taApplyMe = applyFriendMessageService.getUntreatedApplyMessageByToUserId(toUserId, userId);
-        if (taApplyMe != null) {
-            // 直接添加好友，更新状态为已同意
-            taApplyMe.setStatus(1);
-            addFriend(userId, toUserId, remark, taApplyMe.getRemark());
-            return ResponseEntity.ok("发送成功");
-        }
-        // 检查是否有未处理的好友申请信息
-        ApplyFriendMessage applyTa = applyFriendMessageService.getUntreatedApplyMessageByToUserId(userId, toUserId);
-        if (applyTa != null) {
-            return ResponseEntity.fail("你已经申请过好友了");
-        }
-        // 发送好友申请
-        ApplyFriendMessage applyFriendMessage = new ApplyFriendMessage();
-        applyFriendMessage.setId(idGeneratorClient.generate());
-        applyFriendMessage.setUserId(userId);
-        applyFriendMessage.setToUserId(toUserId);
-        applyFriendMessage.setRemark(remark);
-        applyFriendMessage.setApplyReason(reason);
-        applyFriendMessage.setStatus(0);
-        applyFriendMessageService.save(applyFriendMessage);
-        return ResponseEntity.ok("发送成功");
+        myFriend.setPromptStatus(1);
+        myFriend.setStatus(1);
+        myFriend.setRemark(remark);
+        updateById(myFriend);
     }
 
     @Override
@@ -142,7 +193,13 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         applyFriendMessage.setStatus(1);
         applyFriendMessageService.updateById(applyFriendMessage);
         // 添加好友
-        addFriend(applyFriendMessage.getUserId(), userId, applyFriendMessage.getRemark(), remark);
+        // 检查是否有好友关系
+        Friend myFriend = getFriend(userId, applyFriendMessage.getUserId());
+        if (myFriend == null) {
+            addFriendForNoFriendShip(applyFriendMessage.getUserId(), userId, applyFriendMessage.getRemark(), remark);
+        } else {
+            addFriendForFriendShip(myFriend, remark, applyFriendMessage.getRemark());
+        }
         return ResponseEntity.ok("添加成功");
     }
 
@@ -158,7 +215,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         if (applyFriendMessage.getStatus() != 0) {
             return ResponseEntity.fail("该申请已处理过");
         }
-        // 更新申请状态为已同意
+        // 更新申请状态为已拒绝
         applyFriendMessage.setStatus(-1);
         applyFriendMessageService.updateById(applyFriendMessage);
         return ResponseEntity.ok("处理成功");
@@ -166,7 +223,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
 
     @Override
     public ResponseEntity getFriendList(Long userId) {
-        List<Friend> friendList = query().eq("user_id", userId).eq("status", 1).list();
+        List<Friend> friendList = query().eq("user_id", userId).in("status", Arrays.asList(1,-1)).list();
         if (friendList.isEmpty()) {
             return ResponseEntity.success(new ArrayList<>());
         }
@@ -235,43 +292,36 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     }
 
     @Override
-    public ResponseEntity blockFriend(Long userId, Long friendId) {
-        // 先判断是否是好友
-        Friend friend = getFriend(userId, friendId);
-        if (friend == null) {
-            return ResponseEntity.fail("你们不是好友关系");
-        }
+    public ResponseEntity blockUser(Long userId, Long toUserId) {
         Long blackItemId = idGeneratorClient.generate();
         // 实现黑名单逻辑
         // 先检查是否已在黑名单
-        if (blackListService.isExistBlackList(userId, friendId)) {
+        if (blackListService.isExistBlackList(userId, toUserId)) {
             return ResponseEntity.fail("已在黑名单中");
         }
         BlackListItem blackListItem = new BlackListItem();
         blackListItem.setId(blackItemId);
         blackListItem.setUserId(userId);
-        blackListItem.setBlackUserId(friendId);
+        blackListItem.setBlackUserId(toUserId);
         blackListService.save(blackListItem);
-        friend.setStatus(2);
-        updateById(friend);
+        // 查询是否是好友
+        Friend friend = getFriend(userId, toUserId);
+        if (friend != null) {
+            // 删除recentChat
+            recentChatService.deleteByUserIdAndRoomId(userId, friend.getRoomId());
+        }
         return ResponseEntity.ok("添加黑名单成功");
     }
 
     @Override
-    public ResponseEntity removeBlackList(Long userId, Long friendId) {
-        // 先判断是否是好友
-        Friend friend = getFriend(userId, friendId);
-        if (friend == null) {
-            return ResponseEntity.fail("你们不是好友关系");
-        }
+    public ResponseEntity removeBlackList(Long userId, Long toUserId) {
         // 实现移除黑名单逻辑
         // 先检查是否在黑名单
-        BlackListItem blackListItem = blackListService.getBlackListItem(userId, friendId);
+        BlackListItem blackListItem = blackListService.getBlackListItem(userId, toUserId);
         if (blackListItem == null) {
             return ResponseEntity.fail("不在黑名单中");
         }
         blackListService.removeById(blackListItem.getId());
-        friend.setStatus(0);
         return ResponseEntity.ok("移除黑名单成功");
     }
 
@@ -283,8 +333,13 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
             return ResponseEntity.fail("你们不是好友关系");
         }
         // 实现移除好友逻辑
+        Friend taFriend = getFriend(friendId, userId);
+        taFriend.setStatus(-1);
+        updateById(taFriend);
         friend.setStatus(0);
         updateById(friend);
+        // 删除recentChat
+        recentChatService.deleteByUserIdAndRoomId(userId, friend.getRoomId());
         return ResponseEntity.ok("移除好友成功");
     }
 
@@ -323,6 +378,21 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
             }
         }
         return ResponseEntity.success(blackListVoList);
+    }
+
+    @Override
+    public ResponseEntity updateRemark(Long userId, UpdateRemarkDto updateRemarkDto) {
+        Long id = updateRemarkDto.getId();
+        String remark = updateRemarkDto.getRemark();
+        // 判断是否是好友
+        Friend friend = getById(id);
+        if (friend == null || !friend.getUserId().equals(userId)) {
+            return ResponseEntity.fail("好友不存在");
+        }
+        // 更新备注
+        friend.setRemark(remark);
+        updateById(friend);
+        return ResponseEntity.success("备注更新成功");
     }
 
     private Friend getFriend(Long userId, Long friendId) {

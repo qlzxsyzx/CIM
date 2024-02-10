@@ -20,7 +20,7 @@ public class Friend {
 
     private Long roomId;        // 添加成功就生成
 
-    private Integer status;     // 0删除，1正常，2拉黑
+    private Integer status;     // -1被删除,0删除，1正常
 
     private Integer promptStatus; // 0不提示，正常
 

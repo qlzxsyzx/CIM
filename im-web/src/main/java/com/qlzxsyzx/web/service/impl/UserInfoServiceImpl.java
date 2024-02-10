@@ -37,6 +37,14 @@ public class UserInfoServiceImpl implements UserInfoService {
         return userFeignClient.getUserInfoByUserId(userId);
     }
 
+    @Override
+    public List<UserInfo> getUserInfoList(List<Long> userIdList) {
+        if (userIdList == null || userIdList.isEmpty()){
+            return Collections.emptyList();
+        }
+        return userFeignClient.getBatchUserInfo(userIdList);
+    }
+
     private UserInfoVo convertToUserInfoVo(UserInfo userInfo) {
         // 转换逻辑
         UserInfoVo userInfoVo = new UserInfoVo();

@@ -4,6 +4,7 @@ import com.qlzxsyzx.common.ResponseEntity;
 import com.qlzxsyzx.resource.annotation.AuthenticationDetails;
 import com.qlzxsyzx.web.dto.AgreeApplyFriendMessageDto;
 import com.qlzxsyzx.web.dto.ApplyFriendDto;
+import com.qlzxsyzx.web.dto.UpdateRemarkDto;
 import com.qlzxsyzx.web.service.BlackListService;
 import com.qlzxsyzx.web.service.FriendService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,14 +52,14 @@ public class FriendController {
         return friendService.getBlackList(userId);
     }
 
-    @PostMapping("/blockFriend/{friendId}")
-    public ResponseEntity blockFriend(@AuthenticationDetails("userId") Long userId, @PathVariable("friendId") Long friendId) {
-        return friendService.blockFriend(userId, friendId);
+    @PostMapping("/blockUser/{toUserId}")
+    public ResponseEntity blockUser(@AuthenticationDetails("userId") Long userId, @PathVariable("toUserId") Long toUserId) {
+        return friendService.blockUser(userId, toUserId);
     }
 
-    @PostMapping("/removeBlackList/{friendId}")
-    public ResponseEntity removeBlackList(@AuthenticationDetails("userId") Long userId, @PathVariable("friendId") Long friendId) {
-        return friendService.removeBlackList(userId, friendId);
+    @PostMapping("/removeBlackList/{toUserId}")
+    public ResponseEntity removeBlackList(@AuthenticationDetails("userId") Long userId, @PathVariable("toUserId") Long toUserId) {
+        return friendService.removeBlackList(userId, toUserId);
     }
 
     @PostMapping("/removeFriend/{friendId}")
@@ -74,5 +75,10 @@ public class FriendController {
     @GetMapping("/getFriendList")
     public ResponseEntity getFriendList(@AuthenticationDetails("userId") Long userId) {
         return friendService.getFriendList(userId);
+    }
+
+    @PostMapping("/updateRemark")
+    public ResponseEntity updateRemark(@AuthenticationDetails("userId") Long userId, @RequestBody UpdateRemarkDto updateRemarkDto) {
+        return friendService.updateRemark(userId, updateRemarkDto);
     }
 }

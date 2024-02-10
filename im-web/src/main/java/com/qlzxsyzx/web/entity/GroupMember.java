@@ -22,7 +22,7 @@ public class GroupMember {
 
     private String userNickName;
 
-    private Integer status; // 0 不提醒，1 正常, 2不显示
+    private Integer status; // 0 不提醒，1 正常
 
     private LocalDateTime joinTime;
 

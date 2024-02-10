@@ -9,4 +9,6 @@ import com.qlzxsyzx.web.vo.RecentChatVo;
 public interface RecentChatService extends IService<RecentChat> {
 
     RecentChatVo convertToVo(RecentChat recentChat);
+
+    void deleteByUserIdAndRoomId(Long userId,Long roomId);
 }
