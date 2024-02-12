@@ -22,7 +22,9 @@ public class Group {
 
     private Integer memberCount;
 
-    private Integer status; // 0-解散，1-正常，2-禁言，3-封禁
+    private Integer status; // 0-解散，1-正常，2-封禁
+
+    private Integer noSpeak; // 0-不开启，1-开启
 
     private LocalDateTime createTime;
 

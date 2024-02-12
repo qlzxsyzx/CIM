@@ -13,4 +13,6 @@ public class GroupVo {
     private String name;
 
     private String avatarUrl;
+
+    private Integer memberCount;
 }

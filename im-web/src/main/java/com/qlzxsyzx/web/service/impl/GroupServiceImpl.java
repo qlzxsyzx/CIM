@@ -1,5 +1,6 @@
 package com.qlzxsyzx.web.service.impl;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qlzxsyzx.common.ResponseEntity;
 import com.qlzxsyzx.web.dto.*;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,6 +38,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
 
     @Autowired
     private UserInfoService userInfoService;
+
+    @Autowired
+    private FriendService friendService;
 
     @Override
     public Group getGroupById(Long groupId) {
@@ -128,9 +133,12 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     @Override
     public ResponseEntity getGroupInfo(Long userId, Long groupId) {
         // 判断群是否存在
-        Group group = query().eq("id", groupId).ne("status", 0).one();
-        if (group == null) {
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
             return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
         }
         // 判断是否是群成员,展示不同信息
         GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
@@ -177,6 +185,13 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         if (groupMember == null || !groupMember.getUserId().equals(userId) || groupMember.getExitType() != 0) {
             return ResponseEntity.fail("你不是群成员");
         }
+        Group group = getGroupById(groupMember.getGroupId());
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
         // 更新备注
         groupMember.setGroupNickName(remark);
         groupMemberService.updateById(groupMember);
@@ -192,6 +207,13 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         if (groupMember == null || !groupMember.getUserId().equals(userId) || groupMember.getExitType() != 0) {
             return ResponseEntity.fail("你不是群成员");
         }
+        Group group = getGroupById(groupMember.getGroupId());
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
         // 更新备注
         groupMember.setUserNickName(nickName);
         groupMemberService.updateById(groupMember);
@@ -205,6 +227,13 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         if (groupMember == null || !groupMember.getUserId().equals(userId) || groupMember.getExitType() != 0) {
             return ResponseEntity.fail("你不是群成员");
         }
+        Group group = getGroupById(groupMember.getGroupId());
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
         // 更新群提示状态
         groupMember.setStatus(status);
         groupMemberService.updateById(groupMember);
@@ -217,7 +246,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         String name = updateGroupNameDto.getName();
         // 先判断是否是群成员
         GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
-        if (groupMember == null || !groupMember.getUserId().equals(userId) || groupMember.getExitType() != 0) {
+        if (groupMember == null || groupMember.getExitType() != 0) {
             return ResponseEntity.fail("你不是群成员");
         }
         if (groupMember.getRole() != 3) {
@@ -228,7 +257,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         if (group == null || group.getStatus() == 0) {
             return ResponseEntity.fail("群不存在");
         }
-        if (group.getStatus() == 3) {
+        if (group.getStatus() == 2) {
             return ResponseEntity.fail("群已被封禁");
         }
         group.setName(name);
@@ -242,7 +271,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         String avatar = updateGroupAvatarDto.getAvatarUrl();
         // 先判断是否是群成员
         GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
-        if (groupMember == null || !groupMember.getUserId().equals(userId) || groupMember.getExitType() != 0) {
+        if (groupMember == null || groupMember.getExitType() != 0) {
             return ResponseEntity.fail("你不是群成员");
         }
         if (groupMember.getRole() != 3) {
@@ -253,12 +282,306 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         if (group == null || group.getStatus() == 0) {
             return ResponseEntity.fail("群不存在");
         }
-        if (group.getStatus() == 3) {
+        if (group.getStatus() == 2) {
             return ResponseEntity.fail("群已被封禁");
         }
         group.setAvatarUrl(avatar);
         updateById(group);
         return ResponseEntity.success("更新成功");
+    }
+
+    @Override
+    public ResponseEntity getGroupMemberList(Long userId, Long id, Integer pageNum, Integer pageSize) {
+        // 判断群是否存在
+        Group group = getGroupById(id);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, id);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        // 获取群成员列表
+        List<GroupMember> groupMemberList = groupMemberService.getByGroupId(id, pageNum, pageSize);
+        List<GroupMemberItemVo> groupMemberItemVoList = new ArrayList<>();
+        // 查询用户信息
+        List<Long> userIdList = groupMemberList.stream().map(GroupMember::getUserId).collect(Collectors.toList());
+        Map<Long, UserInfoVo> userIdAndUserInfoMap = userInfoService.getUserIdAndUserInfoMap(userIdList);
+        for (GroupMember member : groupMemberList) {
+            GroupMemberItemVo groupMemberItemVo = new GroupMemberItemVo();
+            BeanUtils.copyProperties(member, groupMemberItemVo);
+            groupMemberItemVo.setUserInfo(userIdAndUserInfoMap.get(member.getUserId()));
+            groupMemberItemVoList.add(groupMemberItemVo);
+        }
+        return ResponseEntity.success(groupMemberItemVoList);
+    }
+
+    @Override
+    public ResponseEntity getNoticeListByGroupId(Long userId, Long id, Integer pageNum, Integer pageSize) {
+        // 判断群是否存在
+        Group group = getGroupById(id);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, id);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        // 查询群公告
+        return ResponseEntity.success(groupNoticeService.getNoticesByGroupId(id, pageNum, pageSize));
+    }
+
+    @Override
+    public ResponseEntity publishNewNotice(Long userId, PublishNewNoticeDto publishNewNoticeDto) {
+        Long noticeId = publishNewNoticeDto.getNoticeId();
+        Long groupId = publishNewNoticeDto.getGroupId();
+        String content = publishNewNoticeDto.getContent();
+        String imageUrl = publishNewNoticeDto.getImageUrl();
+        // 判断群是否存在
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() == 1) {
+            return ResponseEntity.fail("无权操作");
+        }
+        // noticeId存在就是更新公告
+        if (noticeId != null) {
+            GroupNotice notice = groupNoticeService.getNoticeById(noticeId);
+            if (notice != null) {
+                notice.setUserId(userId);
+                notice.setContent(content);
+                notice.setImage(imageUrl);
+                notice.setUpdateTime(LocalDateTime.now());
+                groupNoticeService.updateById(notice);
+                return ResponseEntity.success(groupNoticeService.convertToVo(notice));
+            }
+        }
+        // 发布群公告
+        GroupNotice groupNotice = new GroupNotice();
+        groupNotice.setId(idGeneratorClient.generate());
+        groupNotice.setGroupId(groupId);
+        groupNotice.setUserId(userId);
+        groupNotice.setContent(content);
+        groupNotice.setImage(imageUrl);
+        groupNotice.setCreateTime(LocalDateTime.now());
+        groupNotice.setUpdateTime(LocalDateTime.now());
+        groupNoticeService.save(groupNotice);
+        return ResponseEntity.success(groupNoticeService.convertToVo(groupNotice));
+    }
+
+    @Override
+    public ResponseEntity removeNotice(Long userId, Long id) {
+        // 查询公告
+        GroupNotice notice = groupNoticeService.getNoticeById(id);
+        if (notice == null) {
+            return ResponseEntity.ok("删除成功");
+        }
+        // 判断是否有权限
+        Long groupId = notice.getGroupId();
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() == 1) {
+            return ResponseEntity.fail("无权操作");
+        }
+        // 删除公告
+        notice.setIsDelete(1);
+        groupNoticeService.updateById(notice);
+        return ResponseEntity.success("删除成功");
+    }
+
+    @Override
+    public ResponseEntity updateGroupNoSpeakStatus(Long userId, Long id, Integer noSpeakStatus) {
+        Group group = getGroupById(id);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, id);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() == 1) {
+            return ResponseEntity.fail("无权操作");
+        }
+        group.setNoSpeak(noSpeakStatus);
+        updateById(group);
+        return ResponseEntity.success("更新成功");
+    }
+
+    @Override
+    public ResponseEntity getCandidateMemberList(Long userId, Long id) {
+        Group group = getGroupById(id);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, id);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() != 3) {
+            return ResponseEntity.fail("无权操作");
+        }
+        List<GroupMemberVo> groupMemberList = groupMemberService.getCandidateMemberList(id);
+        return ResponseEntity.success(groupMemberList);
+    }
+
+    @Override
+    public ResponseEntity transferGroup(Long userId, TransferGroupDto transferGroupDto) {
+        Long groupId = transferGroupDto.getGroupId();
+        Long memberId = transferGroupDto.getMemberId();
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() != 3) {
+            return ResponseEntity.fail("无权操作");
+        }
+        // 判断是否是群成员
+        GroupMember toMember = groupMemberService.getById(memberId);
+        if (toMember == null || toMember.getExitType() != 0 || !toMember.getGroupId().equals(groupId)) {
+            return ResponseEntity.fail("群成员不存在");
+        }
+        if (toMember.getRole() != 2) {
+            return ResponseEntity.fail("该成员不符合条件");
+        }
+        // 转让 todo，ws发送消息
+        groupMember.setRole(2);
+        groupMemberService.updateById(groupMember);
+        toMember.setRole(3);
+        groupMemberService.updateById(toMember);
+        return ResponseEntity.ok("转让成功");
+    }
+
+    @Override
+    public ResponseEntity dismissGroup(Long userId, Long id) {
+        Group group = getGroupById(id);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, id);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() != 3) {
+            return ResponseEntity.fail("无权操作");
+        }
+        // 解散 todo 消息
+        group.setStatus(0);
+        group.setDismissTime(LocalDateTime.now());
+        updateById(group);
+        return ResponseEntity.ok("解散成功");
+    }
+
+    @Override
+    public ResponseEntity inviteFriendToJoinGroup(Long userId, InviteFriendJoinGroupDto inviteFriendToJoinGroupDto) {
+        Long groupId = inviteFriendToJoinGroupDto.getGroupId();
+        List<Long> friendIdList = inviteFriendToJoinGroupDto.getFriendIdList();
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        List<Friend> friendListByFriendIdList = friendService.getFriendListByFriendIdList(friendIdList);
+        if (friendListByFriendIdList.isEmpty()) {
+            return ResponseEntity.ok("邀请成功");
+        }
+        // 邀请 异步 todo 发送消息
+        return ResponseEntity.ok("邀请成功");
+    }
+
+    @Override
+    public ResponseEntity removeGroupMember(Long userId, RemoveGroupMemberDto removeGroupMemberDto) {
+        Long groupId = removeGroupMemberDto.getGroupId();
+        List<Long> memberIdList = removeGroupMemberDto.getMemberIdList();
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() == 1) {
+            return ResponseEntity.fail("无权操作");
+        }
+        groupMemberService.update().set("exit_type", 2).set("exit_time", LocalDateTime.now())
+                .in("id", memberIdList).update();
+        return ResponseEntity.ok("移除成功");
+    }
+
+    @Override
+    public ResponseEntity exitGroup(Long userId, Long id) {
+        Group group = getGroupById(id);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, id);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        // todo 退出通知
+        groupMember.setExitType(1);
+        groupMember.setExitTime(LocalDateTime.now());
+        groupMemberService.updateById(groupMember);
+        return ResponseEntity.ok("退出成功");
     }
 
     private NotMemberGroupInfoVo getNotMemberGroupInfoVo(Group group) {

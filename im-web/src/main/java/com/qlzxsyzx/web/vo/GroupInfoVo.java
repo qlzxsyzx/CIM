@@ -20,6 +20,8 @@ public class GroupInfoVo {
 
     private Integer status;
 
+    private Integer noSpeak;
+
     private GroupSettingVo groupSetting;
 
     private List<String> memberAvatarUrl;

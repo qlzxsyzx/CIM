@@ -223,7 +223,7 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
 
     @Override
     public ResponseEntity getFriendList(Long userId) {
-        List<Friend> friendList = query().eq("user_id", userId).in("status", Arrays.asList(1,-1)).list();
+        List<Friend> friendList = query().eq("user_id", userId).eq("status", 1).list();
         if (friendList.isEmpty()) {
             return ResponseEntity.success(new ArrayList<>());
         }
@@ -393,6 +393,12 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         friend.setRemark(remark);
         updateById(friend);
         return ResponseEntity.success("备注更新成功");
+    }
+
+    @Override
+    public List<Friend> getFriendListByFriendIdList(List<Long> friendIdList) {
+        return query().in("id", friendIdList)
+                .eq("status",0).list();
     }
 
     private Friend getFriend(Long userId, Long friendId) {

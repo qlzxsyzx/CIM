@@ -4,6 +4,15 @@ import lombok.Data;
 
 @Data
 public class GroupMemberItemVo {
-    private GroupMemberVo member;// 成员信息
+    private Long id;
+
+    private Long groupId;
+
+    private Long userId;
+
+    private Integer role; // 1普通，2管理员，3群主
+
+    private String userNickName;
+
     private UserInfoVo userInfo;// 用户信息
 }

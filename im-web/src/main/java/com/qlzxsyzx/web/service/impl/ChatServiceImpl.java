@@ -99,9 +99,9 @@ public class ChatServiceImpl implements ChatService {
                     chatItemVo.setLastMessage(latestMessage);
                     if (!latestMessage.getSenderId().equals(userId)) {
                         GroupMemberItemVo groupMemberItemVo = new GroupMemberItemVo();
-                        groupMemberItemVo.setUserInfo(userIdUserInfoVoMap.get(latestMessage.getSenderId()));
                         GroupMember member = groupMemberService.getByUserIdAndGroupId(latestMessage.getSenderId(), recentChat.getGroupId());
-                        groupMemberItemVo.setMember(groupMemberService.convertToGroupMemberVo(member));
+                        BeanUtils.copyProperties(member, groupMemberItemVo);
+                        groupMemberItemVo.setUserInfo(userIdUserInfoVoMap.get(latestMessage.getSenderId()));
                         chatItemVo.setSender(groupMemberItemVo);
                     }
                 }
@@ -161,9 +161,10 @@ public class ChatServiceImpl implements ChatService {
             if (group.getStatus() == 0) {
                 return ResponseEntity.fail("群组已解散");
             } else if (group.getStatus() == 2) {
-                return ResponseEntity.fail("群组已禁言");
-            } else if (group.getStatus() == 3) {
                 return ResponseEntity.fail("群组已封禁");
+            }
+            if (group.getNoSpeak()== 1){
+                return ResponseEntity.fail("群组禁止发言");
             }
             // 查询是否被T
             GroupMember member = groupMemberService.getByUserIdAndGroupId(userId, createMessageDto.getReceiverId());

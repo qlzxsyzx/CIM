@@ -29,27 +29,83 @@ public class GroupController {
     }
 
     @PostMapping("/updateGroupRemark")
-    public ResponseEntity updateGroupRemark(@AuthenticationDetails("userId") Long userId, @RequestBody UpdateGroupRemarkDto updateGroupRemarkDto){
+    public ResponseEntity updateGroupRemark(@AuthenticationDetails("userId") Long userId, @RequestBody UpdateGroupRemarkDto updateGroupRemarkDto) {
         return groupService.updateGroupRemark(userId, updateGroupRemarkDto);
     }
 
     @PostMapping("/updateUserNickName")
-    public ResponseEntity updateUserNickName(@AuthenticationDetails("userId") Long userId, @RequestBody UpdateUserNickNameDto updateUserNickNameDto){
+    public ResponseEntity updateUserNickName(@AuthenticationDetails("userId") Long userId, @RequestBody UpdateUserNickNameDto updateUserNickNameDto) {
         return groupService.updateUserNickName(userId, updateUserNickNameDto);
     }
 
     @PostMapping("/updateGroupPromptStatus/{id}/{status}")
-    public ResponseEntity updateGroupPromptStatus(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id, @PathVariable("status") Integer status){
+    public ResponseEntity updateGroupPromptStatus(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id, @PathVariable("status") Integer status) {
         return groupService.updateGroupPromptStatus(userId, id, status);
     }
 
     @PostMapping("/updateGroupName")
-    public ResponseEntity updateGroupName(@AuthenticationDetails("userId") Long userId, @RequestBody UpdateGroupNameDto updateGroupNameDto){
+    public ResponseEntity updateGroupName(@AuthenticationDetails("userId") Long userId, @RequestBody UpdateGroupNameDto updateGroupNameDto) {
         return groupService.updateGroupName(userId, updateGroupNameDto);
     }
 
     @PostMapping("/updateGroupAvatar")
-    public ResponseEntity updateGroupAvatar(@AuthenticationDetails("userId") Long userId, @RequestBody UpdateGroupAvatarDto updateGroupAvatarDto){
+    public ResponseEntity updateGroupAvatar(@AuthenticationDetails("userId") Long userId, @RequestBody UpdateGroupAvatarDto updateGroupAvatarDto) {
         return groupService.updateGroupAvatar(userId, updateGroupAvatarDto);
+    }
+
+    @GetMapping("/getGroupMemberList/{id}/{pageNum}/{pageSize}")
+    public ResponseEntity getGroupMemberList(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id, @PathVariable("pageNum") Integer pageNum, @PathVariable("pageSize") Integer pageSize) {
+        return groupService.getGroupMemberList(userId, id, pageNum, pageSize);
+    }
+
+    @GetMapping("/getNoticeListByGroupId/{id}/{pageNum}/{pageSize}")
+    public ResponseEntity getNoticeListByGroupId(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id,
+                                                 @PathVariable("pageNum") Integer pageNum, @PathVariable("pageSize") Integer pageSize) {
+        return groupService.getNoticeListByGroupId(userId, id, pageNum, pageSize);
+    }
+
+    @PostMapping("/publishNewNotice")
+    public ResponseEntity publishNewNotice(@AuthenticationDetails("userId") Long userId, @RequestBody PublishNewNoticeDto publishNewNoticeDto) {
+        return groupService.publishNewNotice(userId, publishNewNoticeDto);
+    }
+
+    @PostMapping("/removeNotice/{id}")
+    public ResponseEntity removeNotice(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id) {
+        return groupService.removeNotice(userId, id);
+    }
+
+    @PostMapping("/updateGroupNoSpeakStatus/{id}/{noSpeakStatus}")
+    public ResponseEntity updateGroupNoSpeakStatus(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id, @PathVariable("noSpeakStatus") Integer noSpeakStatus) {
+        return groupService.updateGroupNoSpeakStatus(userId, id, noSpeakStatus);
+    }
+
+    @GetMapping("/getCandidateMemberList/{id}")
+    public ResponseEntity getCandidateMemberList(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id) {
+        return groupService.getCandidateMemberList(userId, id);
+    }
+
+    @PostMapping("/transferGroup")
+    public ResponseEntity transferGroup(@AuthenticationDetails("userId") Long userId, @RequestBody TransferGroupDto transferGroupDto) {
+        return groupService.transferGroup(userId, transferGroupDto);
+    }
+
+    @PostMapping("/dismissGroup/{id}")
+    public ResponseEntity dismissGroup(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id) {
+        return groupService.dismissGroup(userId, id);
+    }
+
+    @PostMapping("/inviteFriendToJoinGroup")
+    public ResponseEntity inviteFriendToJoinGroup(@AuthenticationDetails("userId") Long userId, @RequestBody InviteFriendJoinGroupDto inviteFriendToJoinGroupDto) {
+        return groupService.inviteFriendToJoinGroup(userId, inviteFriendToJoinGroupDto);
+    }
+
+    @PostMapping("/removeGroupMember")
+    public ResponseEntity removeGroupMember(@AuthenticationDetails("userId") Long userId, @RequestBody RemoveGroupMemberDto removeGroupMemberDto) {
+        return groupService.removeGroupMember(userId, removeGroupMemberDto);
+    }
+
+    @PostMapping("/exitGroup/{id}")
+    public ResponseEntity exitGroup(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id) {
+        return groupService.exitGroup(userId, id);
     }
 }

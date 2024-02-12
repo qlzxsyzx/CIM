@@ -28,4 +28,26 @@ public interface GroupService extends IService<Group> {
     ResponseEntity updateGroupName(Long userId, UpdateGroupNameDto updateGroupNameDto);
 
     ResponseEntity updateGroupAvatar(Long userId, UpdateGroupAvatarDto updateGroupAvatarDto);
+
+    ResponseEntity getGroupMemberList(Long userId, Long id, Integer pageNum, Integer pageSize);
+
+    ResponseEntity getNoticeListByGroupId(Long userId, Long id, Integer pageNum, Integer pageSize);
+
+    ResponseEntity publishNewNotice(Long userId, PublishNewNoticeDto publishNewNoticeDto);
+
+    ResponseEntity removeNotice(Long userId, Long id);
+
+    ResponseEntity updateGroupNoSpeakStatus(Long userId, Long id, Integer noSpeakStatus);
+
+    ResponseEntity getCandidateMemberList(Long userId, Long id);
+
+    ResponseEntity transferGroup(Long userId, TransferGroupDto transferGroupDto);
+
+    ResponseEntity dismissGroup(Long userId, Long id);
+
+    ResponseEntity inviteFriendToJoinGroup(Long userId, InviteFriendJoinGroupDto inviteFriendToJoinGroupDto);
+
+    ResponseEntity removeGroupMember(Long userId, RemoveGroupMemberDto removeGroupMemberDto);
+
+    ResponseEntity exitGroup(Long userId, Long id);
 }

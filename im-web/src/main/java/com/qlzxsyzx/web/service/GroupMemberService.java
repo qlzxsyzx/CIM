@@ -16,4 +16,8 @@ public interface GroupMemberService extends IService<GroupMember> {
     GroupSettingVo convertToGroupSettingVo(GroupMember groupMember);
 
     GroupMemberVo convertToGroupMemberVo(GroupMember groupMember);
+
+    List<GroupMember> getByGroupId(Long id, Integer pageNum, Integer pageSize);
+
+    List<GroupMemberVo> getCandidateMemberList(Long id);
 }
