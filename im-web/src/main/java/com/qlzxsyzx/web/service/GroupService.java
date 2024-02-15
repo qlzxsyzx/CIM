@@ -50,4 +50,20 @@ public interface GroupService extends IService<Group> {
     ResponseEntity removeGroupMember(Long userId, RemoveGroupMemberDto removeGroupMemberDto);
 
     ResponseEntity exitGroup(Long userId, Long id);
+
+    ResponseEntity applyAddGroup(Long userId, ApplyAddGroupDto applyAddGroupDto);
+
+    ResponseEntity getGroupNotificationList(Long userId, int pageNum, int pageSize);
+
+    ResponseEntity agreeJoinGroupApply(Long userId, Long notificationId);
+
+    ResponseEntity refuseJoinGroupApply(Long userId, Long notificationId);
+
+    ResponseEntity agreeGroupInvite(Long userId, Long notificationId);
+
+    ResponseEntity refuseGroupInvite(Long userId, Long notificationId);
+
+    ResponseEntity deleteGroupNotification(Long userId, Long notificationId);
+
+    ResponseEntity getMemberInfo(Long userId, Long groupId, Long toUserId);
 }

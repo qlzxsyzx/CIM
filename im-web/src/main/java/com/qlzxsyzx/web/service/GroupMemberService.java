@@ -20,4 +20,8 @@ public interface GroupMemberService extends IService<GroupMember> {
     List<GroupMember> getByGroupId(Long id, Integer pageNum, Integer pageSize);
 
     List<GroupMemberVo> getCandidateMemberList(Long id);
+
+    List<GroupMember> getAdminList(Long groupId);
+
+    void addGroupMember(Long userId, Long groupId);
 }

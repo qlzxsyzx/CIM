@@ -108,4 +108,45 @@ public class GroupController {
     public ResponseEntity exitGroup(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id) {
         return groupService.exitGroup(userId, id);
     }
+
+    @PostMapping("/applyAddGroup")
+    public ResponseEntity applyAddGroup(@AuthenticationDetails("userId") Long userId, @RequestBody ApplyAddGroupDto applyAddGroupDto) {
+        return groupService.applyAddGroup(userId, applyAddGroupDto);
+    }
+
+    @GetMapping("/getGroupNotificationList/{pageNum}/{pageSize}")
+    public ResponseEntity getGroupNotificationList(@AuthenticationDetails("userId") Long userId, @PathVariable("pageNum") int pageNum,
+                                                   @PathVariable("pageSize") int pageSize) {
+        return groupService.getGroupNotificationList(userId, pageNum, pageSize);
+    }
+
+    @PostMapping("/agreeJoinGroupApply/{notificationId}")
+    public ResponseEntity agreeJoinGroupApply(@AuthenticationDetails("userId") Long userId, @PathVariable("notificationId") Long notificationId) {
+        return groupService.agreeJoinGroupApply(userId, notificationId);
+    }
+
+    @PostMapping("/refuseJoinGroupApply/{notificationId}")
+    public ResponseEntity refuseJoinGroupApply(@AuthenticationDetails("userId") Long userId, @PathVariable("notificationId") Long notificationId) {
+        return groupService.refuseJoinGroupApply(userId, notificationId);
+    }
+
+    @PostMapping("/agreeGroupInvite/{notificationId}")
+    public ResponseEntity agreeGroupInvite(@AuthenticationDetails("userId") Long userId, @PathVariable("notificationId") Long notificationId) {
+        return groupService.agreeGroupInvite(userId, notificationId);
+    }
+
+    @PostMapping("/refuseGroupInvite/{notificationId}")
+    public ResponseEntity refuseGroupInvite(@AuthenticationDetails("userId") Long userId, @PathVariable("notificationId") Long notificationId) {
+        return groupService.refuseGroupInvite(userId, notificationId);
+    }
+
+    @PostMapping("/deleteGroupNotification/{notificationId}")
+    public ResponseEntity deleteGroupNotification(@AuthenticationDetails("userId") Long userId, @PathVariable("notificationId") Long notificationId) {
+        return groupService.deleteGroupNotification(userId, notificationId);
+    }
+
+    @GetMapping("/getMemberInfo/{groupId}/{toUserId}")
+    public ResponseEntity getMemberInfo(@AuthenticationDetails("userId") Long userId, @PathVariable("groupId") Long groupId, @PathVariable("toUserId") Long toUserId) {
+        return groupService.getMemberInfo(userId, groupId, toUserId);
+    }
 }

@@ -10,6 +10,7 @@ import com.qlzxsyzx.web.vo.GroupSettingVo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -54,5 +55,21 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                 .eq("role", 2)
                 .eq("exit_type", 0).list().stream()
                 .map(this::convertToGroupMemberVo).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<GroupMember> getAdminList(Long groupId) {
+        return query().eq("group_id", groupId)
+                .eq("exit_type", 0)
+                .in("role", Arrays.asList(3, 2))
+                .list();
+    }
+
+    @Override
+    public void addGroupMember(Long userId, Long groupId) {
+        GroupMember groupMember = new GroupMember();
+        groupMember.setGroupId(groupId);
+        groupMember.setUserId(userId);
+        save(groupMember);
     }
 }

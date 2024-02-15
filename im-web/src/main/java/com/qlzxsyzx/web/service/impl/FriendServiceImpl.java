@@ -162,13 +162,13 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     private void addFriendForFriendShip(Friend myFriend, String remark, String friendRemark) {
         // 恢复好友关系
         Friend taFriend = getFriend(myFriend.getFriendId(), myFriend.getUserId());
-        if (taFriend.getStatus() == 0){
+        if (taFriend.getStatus() == 0) {
             taFriend.setPromptStatus(1);
         }
         taFriend.setStatus(1);
         taFriend.setRemark(friendRemark);
         updateById(taFriend);
-        if (myFriend.getStatus() == 0){
+        if (myFriend.getStatus() == 0) {
             myFriend.setPromptStatus(1);
         }
         myFriend.setPromptStatus(1);
@@ -398,7 +398,13 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     @Override
     public List<Friend> getFriendListByFriendIdList(List<Long> friendIdList) {
         return query().in("id", friendIdList)
-                .eq("status",0).list();
+                .eq("status", 0).list();
+    }
+
+    @Override
+    public Friend getFriendByUserIdAndFriendId(Long userId, Long toUserId) {
+        return query().eq("user_id", userId).eq("friend_id", toUserId)
+                .ne("status", 0).one();
     }
 
     private Friend getFriend(Long userId, Long friendId) {

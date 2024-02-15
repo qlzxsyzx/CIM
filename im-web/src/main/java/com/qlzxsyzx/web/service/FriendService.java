@@ -40,4 +40,6 @@ public interface FriendService extends IService<Friend> {
     ResponseEntity updateRemark(Long userId, UpdateRemarkDto updateRemarkDto);
 
     List<Friend> getFriendListByFriendIdList(List<Long> friendIdList);
+
+    Friend getFriendByUserIdAndFriendId(Long userId, Long toUserId);
 }

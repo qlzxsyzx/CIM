@@ -9,6 +9,7 @@ import com.qlzxsyzx.web.feign.IdGeneratorClient;
 import com.qlzxsyzx.web.mapper.GroupMapper;
 import com.qlzxsyzx.web.service.*;
 import com.qlzxsyzx.web.vo.*;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
 
     @Autowired
     private FriendService friendService;
+
+    @Autowired
+    private GroupNotificationService groupNotificationService;
 
     @Override
     public Group getGroupById(Long groupId) {
@@ -116,6 +120,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         recentChat.setGroupId(group.getId());
         recentChat.setRoomId(chatRoom.getRoomId());
         recentChat.setType(1);
+        recentChat.setCreateTime(LocalDateTime.now());
         recentChatService.save(recentChat);
         RecentChatVo recentChatVo = new RecentChatVo();
         BeanUtils.copyProperties(recentChat, recentChatVo);
@@ -149,7 +154,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
             List<GroupMember> members = groupMemberService.query().eq("group_id", groupId)
                     .eq("exit_type", 0)
                     .orderByDesc("role")
-                    .orderByAsc("create_time").last("limit 10").list();
+                    .orderByAsc("join_time").last("limit 10").list();
             // 查出头像
             List<UserInfo> userInfoList = userInfoService.getUserInfoList(
                     members.stream().map(GroupMember::getUserId).collect(Collectors.toList()));
@@ -582,6 +587,270 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         groupMember.setExitTime(LocalDateTime.now());
         groupMemberService.updateById(groupMember);
         return ResponseEntity.ok("退出成功");
+    }
+
+    @Override
+    public ResponseEntity applyAddGroup(Long userId, ApplyAddGroupDto applyAddGroupDto) {
+        Long groupId = applyAddGroupDto.getGroupId();
+        String reason = applyAddGroupDto.getReason();
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember != null) {
+            if (groupMember.getExitType() == 0) {
+                return ResponseEntity.fail("你已经是群成员了");
+            }
+        }
+        // 删除所有用户对该群的申请记录
+        groupNotificationService.deleteApplyNotification(userId, groupId);
+        // 查询群主，管理员
+        List<GroupMember> adminList = groupMemberService.getAdminList(groupId);
+        // 向群主，管理员发出申请
+        Long[] idList = idGeneratorClient.generateIdBatch(adminList.size());
+        List<GroupNotification> groupNotificationList = new ArrayList<>();
+        for (int i = 0; i < adminList.size(); i++) {
+            GroupMember admin = adminList.get(i);
+            GroupNotification groupNotification = new GroupNotification();
+            groupNotification.setId(idList[i]);
+            groupNotification.setUserId(userId);
+            groupNotification.setGroupId(groupId);
+            groupNotification.setType(0);
+            groupNotification.setDecisionUserId(admin.getUserId());
+            groupNotification.setDecisionUserRole(admin.getRole());
+            groupNotification.setReason(reason);
+            groupNotificationList.add(groupNotification);
+        }
+        groupNotificationService.saveBatch(groupNotificationList);
+        // todo ws
+        return ResponseEntity.ok("申请已发出");
+    }
+
+    @Override
+    public ResponseEntity getGroupNotificationList(Long userId, int pageNum, int pageSize) {
+        return ResponseEntity.success(groupNotificationService.getGroupNotificationList(userId, pageNum, pageSize));
+    }
+
+    @Override
+    public ResponseEntity agreeJoinGroupApply(Long userId, Long notificationId) {
+        GroupNotification apply = groupNotificationService.getGroupNotificationById(notificationId);
+        if (apply == null || apply.getType() != 0 || !apply.getDecisionUserId().equals(userId)) {
+            return ResponseEntity.error("申请不存在");
+        }
+        if (apply.getStatus() != 0) {
+            return ResponseEntity.error("申请已处理");
+        }
+        Long groupId = apply.getGroupId();
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() == 1) {
+            return ResponseEntity.fail("无权操作");
+        }
+        Long applyUserId = apply.getUserId();
+        GroupMember applyMember = groupMemberService.getByUserIdAndGroupId(applyUserId, groupId);
+        if (applyMember != null && applyMember.getExitType() == 0) {
+            return ResponseEntity.fail("申请用户已经是群成员");
+        }
+        // 处理申请
+        groupNotificationService.update().eq("id", notificationId).set("status", 1).set("update_time", LocalDateTime.now()).update();
+        // 未处理的其他人的申请记录以及邀请记录设置为已加入
+        groupNotificationService.update().set("status", 3)
+                .eq("group_id", groupId)
+                .eq("status", 0)
+                .and(sql -> sql.nested(w1 -> w1.eq("type", 0).eq("user_id", applyUserId))
+                        .or().nested(w2 -> w2.eq("type", 6).eq("decision_user_id", applyUserId)))
+                .update();
+        // 添加群成员
+        if (applyMember != null) {
+            // 删除原记录
+            groupMemberService.removeById(applyMember.getId());
+        }
+        groupMemberService.addGroupMember(applyUserId, groupId);
+        // 申请入群成功通知
+        GroupNotification notification = new GroupNotification();
+        notification.setId(idGeneratorClient.generate());
+        notification.setUserId(userId);
+        notification.setGroupId(groupId);
+        notification.setType(8);
+        notification.setDecisionUserId(applyUserId);
+        notification.setDecisionUserRole(1);
+        groupNotificationService.save(notification);
+        // todo 发送消息
+        return ResponseEntity.ok("处理成功");
+    }
+
+    @Override
+    public ResponseEntity refuseJoinGroupApply(Long userId, Long notificationId) {
+        GroupNotification apply = groupNotificationService.getGroupNotificationById(notificationId);
+        if (apply == null || apply.getType() != 0 || !apply.getDecisionUserId().equals(userId)) {
+            return ResponseEntity.error("申请不存在");
+        }
+        if (apply.getStatus() != 0) {
+            return ResponseEntity.error("申请已处理");
+        }
+        Long groupId = apply.getGroupId();
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() == 1) {
+            return ResponseEntity.fail("无权操作");
+        }
+        Long applyUserId = apply.getUserId();
+        GroupMember applyMember = groupMemberService.getByUserIdAndGroupId(applyUserId, groupId);
+        if (applyMember != null && applyMember.getExitType() == 0) {
+            return ResponseEntity.fail("申请用户已经是群成员");
+        }
+        // 处理申请
+        groupNotificationService.update().eq("id", notificationId).set("status", 2).set("update_time", LocalDateTime.now()).update();
+        // 删除其他人的申请记录
+        groupNotificationService.update().set("is_delete", 1)
+                .eq("group_id", groupId)
+                .eq("user_id", applyUserId)
+                .eq("type", 0)
+                .ne("id", notificationId)
+                .update();
+        // 申请入群拒绝通知
+        GroupNotification notification = new GroupNotification();
+        notification.setId(idGeneratorClient.generate());
+        notification.setUserId(userId);
+        notification.setGroupId(groupId);
+        notification.setType(9);
+        notification.setDecisionUserId(applyUserId);
+        notification.setDecisionUserRole(1);
+        groupNotificationService.save(notification);
+        return ResponseEntity.ok("处理成功");
+    }
+
+    @Override
+    public ResponseEntity agreeGroupInvite(Long userId, Long notificationId) {
+        GroupNotification invite = groupNotificationService.getGroupNotificationById(notificationId);
+        if (invite == null || invite.getType() != 6 || !invite.getDecisionUserId().equals(userId)) {
+            return ResponseEntity.error("申请不存在");
+        }
+        if (invite.getStatus() != 0) {
+            return ResponseEntity.error("申请已处理");
+        }
+        Long groupId = invite.getGroupId();
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        Long inviteUserId = invite.getDecisionUserId();
+        GroupMember inviteMember = groupMemberService.getByUserIdAndGroupId(inviteUserId, groupId);
+        if (inviteMember != null && inviteMember.getExitType() == 0) {
+            return ResponseEntity.fail("你已经是群成员");
+        }
+        // 处理邀请
+        groupNotificationService.update().eq("id", notificationId).set("status", 1).set("update_time", LocalDateTime.now()).update();
+        // 未处理的申请记录以及邀请记录设置为已加入
+        groupNotificationService.update().set("status", 3)
+                .eq("group_id", groupId)
+                .eq("status", 0)
+                .and(sql -> sql.nested(w1 -> w1.eq("type", 0).eq("user_id", userId))
+                        .or().nested(w2 -> w2.eq("type", 6).eq("decision_user_id", userId)))
+                .update();
+        // 添加群成员
+        if (inviteMember != null) {
+            // 删除原记录
+            groupMemberService.removeById(inviteMember.getId());
+        }
+        groupMemberService.addGroupMember(userId, groupId);
+        // todo ws发送
+        return ResponseEntity.ok("处理成功");
+    }
+
+    @Override
+    public ResponseEntity refuseGroupInvite(Long userId, Long notificationId) {
+        GroupNotification invite = groupNotificationService.getGroupNotificationById(notificationId);
+        if (invite == null || invite.getType() != 6 || !invite.getDecisionUserId().equals(userId)) {
+            return ResponseEntity.error("申请不存在");
+        }
+        if (invite.getStatus() != 0) {
+            return ResponseEntity.error("申请已处理");
+        }
+        Long groupId = invite.getGroupId();
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        Long inviteUserId = invite.getDecisionUserId();
+        GroupMember inviteMember = groupMemberService.getByUserIdAndGroupId(inviteUserId, groupId);
+        if (inviteMember != null && inviteMember.getExitType() == 0) {
+            return ResponseEntity.fail("你已经是群成员");
+        }
+        // 处理邀请
+        groupNotificationService.update().eq("id", notificationId).set("status", 2).set("update_time", LocalDateTime.now()).update();
+        // todo ws发送
+        return ResponseEntity.ok("处理成功");
+    }
+
+    @Override
+    public ResponseEntity deleteGroupNotification(Long userId, Long notificationId) {
+        GroupNotification notification = groupNotificationService.getGroupNotificationById(notificationId);
+        if (notification == null || !notification.getDecisionUserId().equals(userId)) {
+            return ResponseEntity.error("申请不存在");
+        }
+        notification.setIsDelete(1);
+        notification.setUpdateTime(LocalDateTime.now());
+        groupNotificationService.updateById(notification);
+        return ResponseEntity.ok("删除成功");
+    }
+
+    @Override
+    public ResponseEntity getMemberInfo(Long userId, Long groupId, Long toUserId) {
+        // 查询用户信息
+        UserInfo userInfo = userInfoService.getUserInfoByUserId(toUserId);
+        if (userInfo == null) {
+            return ResponseEntity.error("用户不存在");
+        }
+        GroupMemberSimpleInfoVo info = new GroupMemberSimpleInfoVo();
+        info.setName(userInfo.getName());
+        info.setAvatarUrl(userInfo.getAvatarUrl());
+        info.setUserId(toUserId);
+        info.setGroupId(groupId);
+        // 查询是否好友
+        Friend friend = friendService.getFriendByUserIdAndFriendId(userId, toUserId);
+        if (friend != null) {
+            info.setRemark(friend.getRemark());
+        }
+        // 查询是否群成员
+        GroupMember member = groupMemberService.getByUserIdAndGroupId(toUserId, groupId);
+        if (member != null) {
+            info.setId(member.getId());
+            info.setRole(member.getRole());
+            info.setUserNickName(member.getUserNickName());
+        }
+        return ResponseEntity.success(info);
     }
 
     private NotMemberGroupInfoVo getNotMemberGroupInfoVo(Group group) {
