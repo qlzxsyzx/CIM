@@ -3,12 +3,16 @@ package com.qlzxsyzx.web.service.impl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qlzxsyzx.common.ResponseEntity;
 import com.qlzxsyzx.web.dto.CreateMessageDto;
+import com.qlzxsyzx.web.dto.GetChatMessageListDto;
+import com.qlzxsyzx.web.dto.GetGroupChatMessageHistoryDto;
+import com.qlzxsyzx.web.dto.GetSingleChatMessageHistoryDto;
 import com.qlzxsyzx.web.entity.*;
 import com.qlzxsyzx.web.feign.FileFeignClient;
 import com.qlzxsyzx.web.feign.IdGeneratorClient;
 import com.qlzxsyzx.web.mq.MQSendService;
 import com.qlzxsyzx.web.service.*;
 import com.qlzxsyzx.web.vo.*;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -163,7 +167,7 @@ public class ChatServiceImpl implements ChatService {
             } else if (group.getStatus() == 2) {
                 return ResponseEntity.fail("群组已封禁");
             }
-            if (group.getNoSpeak()== 1){
+            if (group.getNoSpeak() == 1) {
                 return ResponseEntity.fail("群组禁止发言");
             }
             // 查询是否被T
@@ -190,7 +194,10 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ResponseEntity getChatMessageList(Long userId, Long roomId, Integer pageNum, Integer pageSize) {
+    public ResponseEntity getChatMessageList(Long userId, GetChatMessageListDto getChatMessageListDto) {
+        Long roomId = getChatMessageListDto.getRoomId();
+        Long lastMessageId = getChatMessageListDto.getLastMessageId();
+        Integer pageSize = getChatMessageListDto.getPageSize();
         // 查询聊天室是否存在
         ChatRoom chatRoom = chatRoomService.getById(roomId);
         if (chatRoom == null) {
@@ -204,11 +211,12 @@ public class ChatServiceImpl implements ChatService {
                 return ResponseEntity.fail("对方不是您的好友");
             }
             // 获取最近聊天记录
-            Page<ChatMessage> page = new Page<>(pageNum, pageSize);
-            Page<ChatMessage> chatMessagePage = chatMessageService.query()
+            List<ChatMessage> chatMessagePage = chatMessageService.query()
                     .eq("room_id", roomId)
+                    .le(lastMessageId != null, "message_id", lastMessageId)
                     .orderByDesc("create_time")
-                    .page(page);
+                    .last("limit " + pageSize)
+                    .list();
             return ResponseEntity.success(getFileInfo(chatMessagePage));
         }
         if (type == 1) {
@@ -224,29 +232,33 @@ public class ChatServiceImpl implements ChatService {
             }
             // 被T，获取退出时间前的聊天记录
             LocalDateTime exitTime = member.getExitTime();
-            Page<ChatMessage> page = new Page<>(pageNum, pageSize);
-            Page<ChatMessage> chatMessagePage;
+            List<ChatMessage> chatMessageList;
             if (member.getExitType() == 2) {
-                chatMessagePage = chatMessageService.query()
+                chatMessageList = chatMessageService.query()
                         .eq("room_id", roomId)
-                        .le("create_time", exitTime)
+                        .le(lastMessageId != null, "message_id", lastMessageId)
+                        .between("create_time", member.getJoinTime(), exitTime)
                         .orderByDesc("create_time")
-                        .page(page);
+                        .last("limit " + pageSize)
+                        .list();
             } else {
-                chatMessagePage = chatMessageService.query()
+                chatMessageList = chatMessageService.query()
                         .eq("room_id", roomId)
+                        .le(lastMessageId != null, "message_id", lastMessageId)
+                        .ge("create_time", member.getJoinTime())
                         .orderByDesc("create_time")
-                        .page(page);
+                        .last("limit " + pageSize)
+                        .list();
             }
             // 获取最近聊天记录 群聊，获取最近聊天记录
             // 转化成vo
-            return ResponseEntity.success(getFileInfo(chatMessagePage));
+            return ResponseEntity.success(getFileInfo(chatMessageList));
         }
         return ResponseEntity.success(new ArrayList<>());
     }
 
-    private List<ChatMessageVo> getFileInfo(Page<ChatMessage> chatMessagePage) {
-        return chatMessagePage.getRecords().stream()
+    private List<ChatMessageVo> getFileInfo(List<ChatMessage> chatMessagePage) {
+        return chatMessagePage.stream()
                 .map(chatMessage -> {
                     ChatMessageVo chatMessageVo = convertToVo(chatMessage);
                     if (chatMessage.getRecordId() != null) {
@@ -345,6 +357,72 @@ public class ChatServiceImpl implements ChatService {
         recentChat.setTop(status);
         recentChatService.updateById(recentChat);
         return ResponseEntity.ok("修改成功");
+    }
+
+    @Override
+    public ResponseEntity getSingleChatMessageHistory(Long userId, GetSingleChatMessageHistoryDto getSingleChatMessageHistoryDto) {
+        Long toUserId = getSingleChatMessageHistoryDto.getToUserId();
+        Long lastMessageId = getSingleChatMessageHistoryDto.getLastMessageId();
+        Integer pageNum = getSingleChatMessageHistoryDto.getPageNum();
+        Integer pageSize = getSingleChatMessageHistoryDto.getPageSize();
+        String searchContent = getSingleChatMessageHistoryDto.getSearchContent();
+        Friend friend = friendService.getFriendByUserIdAndFriendId(userId, toUserId);
+        if (friend == null || friend.getStatus() == 0) {
+            return ResponseEntity.fail("对方不是您的好友");
+        }
+        // 获取最近聊天记录
+        Page<ChatMessage> page = new Page<>(pageNum, pageSize);
+        Page<ChatMessage> chatMessagePage = chatMessageService.query()
+                .eq("room_id", friend.getRoomId())
+                .le("message_id", lastMessageId)
+                .like(StringUtils.isNotBlank(searchContent), "content", searchContent)
+                .orderByDesc("create_time")
+                .page(page);
+        return ResponseEntity.success(getFileInfo(chatMessagePage.getRecords()));
+    }
+
+    @Override
+    public ResponseEntity getGroupChatMessageHistory(Long userId, GetGroupChatMessageHistoryDto getGroupChatMessageHistoryDto) {
+        Long groupId = getGroupChatMessageHistoryDto.getGroupId();
+        Long lastMessageId = getGroupChatMessageHistoryDto.getLastMessageId();
+        Integer pageNum = getGroupChatMessageHistoryDto.getPageNum();
+        Integer pageSize = getGroupChatMessageHistoryDto.getPageSize();
+        String searchContent = getGroupChatMessageHistoryDto.getSearchContent();
+        // 群聊，判断是否是群成员
+        Group group = groupService.getGroupById(groupId);
+        if (group == null) {
+            return ResponseEntity.fail("群组不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群组已封禁");
+        }
+        // 查询我的群成员状态
+        GroupMember member = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (member == null || member.getExitType() == 1) {
+            return ResponseEntity.fail("您不是该群组成员");
+        }
+        // 被T，获取退出时间前的聊天记录
+        LocalDateTime exitTime = member.getExitTime();
+        Page<ChatMessage> page = new Page<>(pageNum, pageSize);
+        Page<ChatMessage> chatMessagePage;
+        if (member.getExitType() == 2) {
+            chatMessagePage = chatMessageService.query()
+                    .eq("room_id", group.getRoomId())
+                    .le("message_id", lastMessageId)
+                    .between("create_time", member.getJoinTime(), exitTime)
+                    .like(StringUtils.isNotBlank(searchContent), "content", searchContent)
+                    .orderByDesc("create_time")
+                    .page(page);
+        } else {
+            chatMessagePage = chatMessageService.query()
+                    .eq("room_id", group.getRoomId())
+                    .le("message_id", lastMessageId)
+                    .ge("create_time", member.getJoinTime())
+                    .like(StringUtils.isNotBlank(searchContent), "content", searchContent)
+                    .orderByDesc("create_time")
+                    .page(page);
+        }
+        return ResponseEntity.success(getFileInfo(chatMessagePage.getRecords()));
     }
 
     private ChatMessageVo convertToVo(ChatMessage chatMessage) {

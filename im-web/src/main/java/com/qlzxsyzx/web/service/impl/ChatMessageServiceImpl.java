@@ -10,8 +10,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,10 +28,10 @@ public class ChatMessageServiceImpl extends ServiceImpl<ChatMessageMapper, ChatM
     @Override
     public Map<Long, ChatMessageVo> getRoomIdAndLatestMessageMap(List<Long> roomIds) {
         List<ChatMessage> chatMessages = baseMapper.listLatestMessageGroupByRoomId(roomIds);
-        if (chatMessages == null || chatMessages.isEmpty()){
+        if (chatMessages == null || chatMessages.isEmpty()) {
             return Collections.emptyMap();
         }
-        return chatMessages.stream().collect(Collectors.toMap(ChatMessage::getRoomId, this::convertToChatMessageVo));
+        return chatMessages.stream().collect(Collectors.toMap(ChatMessage::getRoomId, this::convertToChatMessageVo, BinaryOperator.maxBy(Comparator.comparing(ChatMessageVo::getCreateTime))));
     }
 
     private ChatMessageVo convertToChatMessageVo(ChatMessage chatMessage) {

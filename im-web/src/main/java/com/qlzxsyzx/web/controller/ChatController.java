@@ -3,6 +3,9 @@ package com.qlzxsyzx.web.controller;
 import com.qlzxsyzx.common.ResponseEntity;
 import com.qlzxsyzx.resource.annotation.AuthenticationDetails;
 import com.qlzxsyzx.web.dto.CreateMessageDto;
+import com.qlzxsyzx.web.dto.GetChatMessageListDto;
+import com.qlzxsyzx.web.dto.GetGroupChatMessageHistoryDto;
+import com.qlzxsyzx.web.dto.GetSingleChatMessageHistoryDto;
 import com.qlzxsyzx.web.service.ChatService;
 import com.qlzxsyzx.web.service.RecentChatService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,14 +38,23 @@ public class ChatController {
         return chatService.sendMessage(userId, createMessageDto);
     }
 
-    @GetMapping("/getChatMessageList/{roomId}/{pageNum}/{pageSize}")
-    public ResponseEntity getChatMessageList(@AuthenticationDetails("userId") Long userId, @PathVariable("roomId") Long roomId,
-                                             @PathVariable("pageNum") Integer pageNum, @PathVariable("pageSize") Integer pageSize) {
-        return chatService.getChatMessageList(userId, roomId, pageNum, pageSize);
+    @PostMapping("/getChatMessageList")
+    public ResponseEntity getChatMessageList(@AuthenticationDetails("userId") Long userId, @RequestBody GetChatMessageListDto getChatMessageListDto) {
+        return chatService.getChatMessageList(userId, getChatMessageListDto);
     }
 
     @PostMapping("/topChat/{id}/{status}")
     public ResponseEntity topChat(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id, @PathVariable("status") Integer status) {
         return chatService.topChat(userId, id, status);
+    }
+
+    @PostMapping("/getSingleChatMessageHistory")
+    public ResponseEntity getSingleChatMessageHistory(@AuthenticationDetails("userId") Long userId, @RequestBody GetSingleChatMessageHistoryDto getSingleChatMessageHistoryDto) {
+        return chatService.getSingleChatMessageHistory(userId, getSingleChatMessageHistoryDto);
+    }
+
+    @PostMapping("/getGroupChatMessageHistory")
+    public ResponseEntity getGroupChatMessageHistory(@AuthenticationDetails("userId") Long userId, @RequestBody GetGroupChatMessageHistoryDto getGroupChatMessageHistoryDto) {
+        return chatService.getGroupChatMessageHistory(userId, getGroupChatMessageHistoryDto);
     }
 }

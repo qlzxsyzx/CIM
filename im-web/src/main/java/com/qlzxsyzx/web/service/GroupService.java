@@ -39,6 +39,8 @@ public interface GroupService extends IService<Group> {
 
     ResponseEntity updateGroupNoSpeakStatus(Long userId, Long id, Integer noSpeakStatus);
 
+    ResponseEntity updateGroupDescription(Long userId, UpdateGroupDescriptionDto updateGroupDescriptionDto);
+
     ResponseEntity getCandidateMemberList(Long userId, Long id);
 
     ResponseEntity transferGroup(Long userId, TransferGroupDto transferGroupDto);

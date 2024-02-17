@@ -444,6 +444,29 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     }
 
     @Override
+    public ResponseEntity updateGroupDescription(Long userId, UpdateGroupDescriptionDto updateGroupDescriptionDto) {
+        Long groupId = updateGroupDescriptionDto.getGroupId();
+        Group group = getGroupById(groupId);
+        if (group == null || group.getStatus() == 0) {
+            return ResponseEntity.fail("群不存在");
+        }
+        if (group.getStatus() == 2) {
+            return ResponseEntity.fail("群已被封禁");
+        }
+        // 判断是否是群成员
+        GroupMember groupMember = groupMemberService.getByUserIdAndGroupId(userId, groupId);
+        if (groupMember == null || groupMember.getExitType() != 0) {
+            return ResponseEntity.fail("你不是群成员");
+        }
+        if (groupMember.getRole() != 3) {
+            return ResponseEntity.fail("无权操作");
+        }
+        group.setDescription(updateGroupDescriptionDto.getDescription());
+        updateById(group);
+        return ResponseEntity.success("更新成功");
+    }
+
+    @Override
     public ResponseEntity getCandidateMemberList(Long userId, Long id) {
         Group group = getGroupById(id);
         if (group == null || group.getStatus() == 0) {

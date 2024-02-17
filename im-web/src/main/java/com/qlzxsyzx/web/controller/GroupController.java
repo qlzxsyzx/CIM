@@ -78,6 +78,11 @@ public class GroupController {
     public ResponseEntity updateGroupNoSpeakStatus(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id, @PathVariable("noSpeakStatus") Integer noSpeakStatus) {
         return groupService.updateGroupNoSpeakStatus(userId, id, noSpeakStatus);
     }
+    
+    @PostMapping("/updateGroupDescription")
+    public ResponseEntity updateGroupDescription(@AuthenticationDetails("userId") Long userId, @RequestBody UpdateGroupDescriptionDto updateGroupDescriptionDto){
+        return groupService.updateGroupDescription(userId, updateGroupDescriptionDto);
+    }
 
     @GetMapping("/getCandidateMemberList/{id}")
     public ResponseEntity getCandidateMemberList(@AuthenticationDetails("userId") Long userId, @PathVariable("id") Long id) {
