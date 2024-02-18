@@ -1,6 +1,7 @@
 package com.qlzxsyzx.server.netty.publisher;
 
 import com.qlzxsyzx.common.mq.ChatMessage;
+import com.qlzxsyzx.common.mq.FileDetails;
 import com.qlzxsyzx.common.mq.SystemNotification;
 import com.qlzxsyzx.common.mq.SystemNotificationForChannel;
 import com.qlzxsyzx.mq.client.RabbitMQClient;
@@ -126,7 +127,15 @@ public class NettyPublisher {
         builder.setReceiverId(chatMessage.getReceiverId());
         builder.setType(chatMessage.getType());
         builder.setContent(chatMessage.getContent());
-        builder.setRecordId(chatMessage.getRecordId());
+        FileDetails fileInfo = chatMessage.getFileInfo();
+        if (fileInfo != null){
+            CustomMessage.FileInfo.Builder fileInfoBuilder = CustomMessage.FileInfo.newBuilder();
+            fileInfoBuilder.setRecordId(fileInfo.getRecordId());
+            fileInfoBuilder.setRealName(fileInfo.getRealName());
+            fileInfoBuilder.setExt(fileInfo.getExt());
+            fileInfoBuilder.setFileSize(fileInfo.getFileSize());
+            builder.setFileInfo(fileInfoBuilder.build());
+        }
         builder.setCreateTime(chatMessage.getCreateTime().toString());
         return builder.build();
     }

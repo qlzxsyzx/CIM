@@ -2900,10 +2900,19 @@ public final class CustomMessage {
         getContentBytes();
 
     /**
-     * <code>int64 recordId = 7;</code>
-     * @return The recordId.
+     * <code>.FileInfo fileInfo = 7;</code>
+     * @return Whether the fileInfo field is set.
      */
-    long getRecordId();
+    boolean hasFileInfo();
+    /**
+     * <code>.FileInfo fileInfo = 7;</code>
+     * @return The fileInfo.
+     */
+    com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo getFileInfo();
+    /**
+     * <code>.FileInfo fileInfo = 7;</code>
+     */
+    com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfoOrBuilder getFileInfoOrBuilder();
 
     /**
      * <code>string createTime = 8;</code>
@@ -2995,9 +3004,17 @@ public final class CustomMessage {
               content_ = s;
               break;
             }
-            case 56: {
+            case 58: {
+              com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.Builder subBuilder = null;
+              if (fileInfo_ != null) {
+                subBuilder = fileInfo_.toBuilder();
+              }
+              fileInfo_ = input.readMessage(com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.parser(), extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(fileInfo_);
+                fileInfo_ = subBuilder.buildPartial();
+              }
 
-              recordId_ = input.readInt64();
               break;
             }
             case 66: {
@@ -3128,14 +3145,27 @@ public final class CustomMessage {
       }
     }
 
-    public static final int RECORDID_FIELD_NUMBER = 7;
-    private long recordId_;
+    public static final int FILEINFO_FIELD_NUMBER = 7;
+    private com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo fileInfo_;
     /**
-     * <code>int64 recordId = 7;</code>
-     * @return The recordId.
+     * <code>.FileInfo fileInfo = 7;</code>
+     * @return Whether the fileInfo field is set.
      */
-    public long getRecordId() {
-      return recordId_;
+    public boolean hasFileInfo() {
+      return fileInfo_ != null;
+    }
+    /**
+     * <code>.FileInfo fileInfo = 7;</code>
+     * @return The fileInfo.
+     */
+    public com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo getFileInfo() {
+      return fileInfo_ == null ? com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.getDefaultInstance() : fileInfo_;
+    }
+    /**
+     * <code>.FileInfo fileInfo = 7;</code>
+     */
+    public com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfoOrBuilder getFileInfoOrBuilder() {
+      return getFileInfo();
     }
 
     public static final int CREATETIME_FIELD_NUMBER = 8;
@@ -3206,8 +3236,8 @@ public final class CustomMessage {
       if (!getContentBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 6, content_);
       }
-      if (recordId_ != 0L) {
-        output.writeInt64(7, recordId_);
+      if (fileInfo_ != null) {
+        output.writeMessage(7, getFileInfo());
       }
       if (!getCreateTimeBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 8, createTime_);
@@ -3244,9 +3274,9 @@ public final class CustomMessage {
       if (!getContentBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, content_);
       }
-      if (recordId_ != 0L) {
+      if (fileInfo_ != null) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt64Size(7, recordId_);
+          .computeMessageSize(7, getFileInfo());
       }
       if (!getCreateTimeBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, createTime_);
@@ -3278,8 +3308,11 @@ public final class CustomMessage {
           != other.getType()) return false;
       if (!getContent()
           .equals(other.getContent())) return false;
-      if (getRecordId()
-          != other.getRecordId()) return false;
+      if (hasFileInfo() != other.hasFileInfo()) return false;
+      if (hasFileInfo()) {
+        if (!getFileInfo()
+            .equals(other.getFileInfo())) return false;
+      }
       if (!getCreateTime()
           .equals(other.getCreateTime())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
@@ -3309,9 +3342,10 @@ public final class CustomMessage {
       hash = (53 * hash) + getType();
       hash = (37 * hash) + CONTENT_FIELD_NUMBER;
       hash = (53 * hash) + getContent().hashCode();
-      hash = (37 * hash) + RECORDID_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getRecordId());
+      if (hasFileInfo()) {
+        hash = (37 * hash) + FILEINFO_FIELD_NUMBER;
+        hash = (53 * hash) + getFileInfo().hashCode();
+      }
       hash = (37 * hash) + CREATETIME_FIELD_NUMBER;
       hash = (53 * hash) + getCreateTime().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
@@ -3459,8 +3493,12 @@ public final class CustomMessage {
 
         content_ = "";
 
-        recordId_ = 0L;
-
+        if (fileInfoBuilder_ == null) {
+          fileInfo_ = null;
+        } else {
+          fileInfo_ = null;
+          fileInfoBuilder_ = null;
+        }
         createTime_ = "";
 
         return this;
@@ -3495,7 +3533,11 @@ public final class CustomMessage {
         result.receiverId_ = receiverId_;
         result.type_ = type_;
         result.content_ = content_;
-        result.recordId_ = recordId_;
+        if (fileInfoBuilder_ == null) {
+          result.fileInfo_ = fileInfo_;
+        } else {
+          result.fileInfo_ = fileInfoBuilder_.build();
+        }
         result.createTime_ = createTime_;
         onBuilt();
         return result;
@@ -3564,8 +3606,8 @@ public final class CustomMessage {
           content_ = other.content_;
           onChanged();
         }
-        if (other.getRecordId() != 0L) {
-          setRecordId(other.getRecordId());
+        if (other.hasFileInfo()) {
+          mergeFileInfo(other.getFileInfo());
         }
         if (!other.getCreateTime().isEmpty()) {
           createTime_ = other.createTime_;
@@ -3838,34 +3880,123 @@ public final class CustomMessage {
         return this;
       }
 
-      private long recordId_ ;
+      private com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo fileInfo_;
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo, com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.Builder, com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfoOrBuilder> fileInfoBuilder_;
       /**
-       * <code>int64 recordId = 7;</code>
-       * @return The recordId.
+       * <code>.FileInfo fileInfo = 7;</code>
+       * @return Whether the fileInfo field is set.
        */
-      public long getRecordId() {
-        return recordId_;
+      public boolean hasFileInfo() {
+        return fileInfoBuilder_ != null || fileInfo_ != null;
       }
       /**
-       * <code>int64 recordId = 7;</code>
-       * @param value The recordId to set.
-       * @return This builder for chaining.
+       * <code>.FileInfo fileInfo = 7;</code>
+       * @return The fileInfo.
        */
-      public Builder setRecordId(long value) {
-        
-        recordId_ = value;
-        onChanged();
+      public com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo getFileInfo() {
+        if (fileInfoBuilder_ == null) {
+          return fileInfo_ == null ? com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.getDefaultInstance() : fileInfo_;
+        } else {
+          return fileInfoBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>.FileInfo fileInfo = 7;</code>
+       */
+      public Builder setFileInfo(com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo value) {
+        if (fileInfoBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileInfo_ = value;
+          onChanged();
+        } else {
+          fileInfoBuilder_.setMessage(value);
+        }
+
         return this;
       }
       /**
-       * <code>int64 recordId = 7;</code>
-       * @return This builder for chaining.
+       * <code>.FileInfo fileInfo = 7;</code>
        */
-      public Builder clearRecordId() {
-        
-        recordId_ = 0L;
-        onChanged();
+      public Builder setFileInfo(
+          com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.Builder builderForValue) {
+        if (fileInfoBuilder_ == null) {
+          fileInfo_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileInfoBuilder_.setMessage(builderForValue.build());
+        }
+
         return this;
+      }
+      /**
+       * <code>.FileInfo fileInfo = 7;</code>
+       */
+      public Builder mergeFileInfo(com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo value) {
+        if (fileInfoBuilder_ == null) {
+          if (fileInfo_ != null) {
+            fileInfo_ =
+              com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.newBuilder(fileInfo_).mergeFrom(value).buildPartial();
+          } else {
+            fileInfo_ = value;
+          }
+          onChanged();
+        } else {
+          fileInfoBuilder_.mergeFrom(value);
+        }
+
+        return this;
+      }
+      /**
+       * <code>.FileInfo fileInfo = 7;</code>
+       */
+      public Builder clearFileInfo() {
+        if (fileInfoBuilder_ == null) {
+          fileInfo_ = null;
+          onChanged();
+        } else {
+          fileInfo_ = null;
+          fileInfoBuilder_ = null;
+        }
+
+        return this;
+      }
+      /**
+       * <code>.FileInfo fileInfo = 7;</code>
+       */
+      public com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.Builder getFileInfoBuilder() {
+        
+        onChanged();
+        return getFileInfoFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>.FileInfo fileInfo = 7;</code>
+       */
+      public com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfoOrBuilder getFileInfoOrBuilder() {
+        if (fileInfoBuilder_ != null) {
+          return fileInfoBuilder_.getMessageOrBuilder();
+        } else {
+          return fileInfo_ == null ?
+              com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.getDefaultInstance() : fileInfo_;
+        }
+      }
+      /**
+       * <code>.FileInfo fileInfo = 7;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilderV3<
+          com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo, com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.Builder, com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfoOrBuilder> 
+          getFileInfoFieldBuilder() {
+        if (fileInfoBuilder_ == null) {
+          fileInfoBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo, com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.Builder, com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfoOrBuilder>(
+                  getFileInfo(),
+                  getParentForChildren(),
+                  isClean());
+          fileInfo_ = null;
+        }
+        return fileInfoBuilder_;
       }
 
       private java.lang.Object createTime_ = "";
@@ -3991,6 +4122,858 @@ public final class CustomMessage {
 
     @java.lang.Override
     public com.qlzxsyzx.server.netty.proto.CustomMessage.MessageRequest getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface FileInfoOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:FileInfo)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>int64 recordId = 1;</code>
+     * @return The recordId.
+     */
+    long getRecordId();
+
+    /**
+     * <code>string realName = 2;</code>
+     * @return The realName.
+     */
+    java.lang.String getRealName();
+    /**
+     * <code>string realName = 2;</code>
+     * @return The bytes for realName.
+     */
+    com.google.protobuf.ByteString
+        getRealNameBytes();
+
+    /**
+     * <code>string ext = 3;</code>
+     * @return The ext.
+     */
+    java.lang.String getExt();
+    /**
+     * <code>string ext = 3;</code>
+     * @return The bytes for ext.
+     */
+    com.google.protobuf.ByteString
+        getExtBytes();
+
+    /**
+     * <code>int64 fileSize = 4;</code>
+     * @return The fileSize.
+     */
+    long getFileSize();
+  }
+  /**
+   * Protobuf type {@code FileInfo}
+   */
+  public  static final class FileInfo extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:FileInfo)
+      FileInfoOrBuilder {
+  private static final long serialVersionUID = 0L;
+    // Use FileInfo.newBuilder() to construct.
+    private FileInfo(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+      super(builder);
+    }
+    private FileInfo() {
+      realName_ = "";
+      ext_ = "";
+    }
+
+    @java.lang.Override
+    @SuppressWarnings({"unused"})
+    protected java.lang.Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new FileInfo();
+    }
+
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+    getUnknownFields() {
+      return this.unknownFields;
+    }
+    private FileInfo(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            case 8: {
+
+              recordId_ = input.readInt64();
+              break;
+            }
+            case 18: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              realName_ = s;
+              break;
+            }
+            case 26: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              ext_ = s;
+              break;
+            }
+            case 32: {
+
+              fileSize_ = input.readInt64();
+              break;
+            }
+            default: {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return com.qlzxsyzx.server.netty.proto.CustomMessage.internal_static_FileInfo_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return com.qlzxsyzx.server.netty.proto.CustomMessage.internal_static_FileInfo_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.class, com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.Builder.class);
+    }
+
+    public static final int RECORDID_FIELD_NUMBER = 1;
+    private long recordId_;
+    /**
+     * <code>int64 recordId = 1;</code>
+     * @return The recordId.
+     */
+    public long getRecordId() {
+      return recordId_;
+    }
+
+    public static final int REALNAME_FIELD_NUMBER = 2;
+    private volatile java.lang.Object realName_;
+    /**
+     * <code>string realName = 2;</code>
+     * @return The realName.
+     */
+    public java.lang.String getRealName() {
+      java.lang.Object ref = realName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        realName_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string realName = 2;</code>
+     * @return The bytes for realName.
+     */
+    public com.google.protobuf.ByteString
+        getRealNameBytes() {
+      java.lang.Object ref = realName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        realName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int EXT_FIELD_NUMBER = 3;
+    private volatile java.lang.Object ext_;
+    /**
+     * <code>string ext = 3;</code>
+     * @return The ext.
+     */
+    public java.lang.String getExt() {
+      java.lang.Object ref = ext_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        ext_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string ext = 3;</code>
+     * @return The bytes for ext.
+     */
+    public com.google.protobuf.ByteString
+        getExtBytes() {
+      java.lang.Object ref = ext_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        ext_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int FILESIZE_FIELD_NUMBER = 4;
+    private long fileSize_;
+    /**
+     * <code>int64 fileSize = 4;</code>
+     * @return The fileSize.
+     */
+    public long getFileSize() {
+      return fileSize_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (recordId_ != 0L) {
+        output.writeInt64(1, recordId_);
+      }
+      if (!getRealNameBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, realName_);
+      }
+      if (!getExtBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, ext_);
+      }
+      if (fileSize_ != 0L) {
+        output.writeInt64(4, fileSize_);
+      }
+      unknownFields.writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (recordId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(1, recordId_);
+      }
+      if (!getRealNameBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, realName_);
+      }
+      if (!getExtBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, ext_);
+      }
+      if (fileSize_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(4, fileSize_);
+      }
+      size += unknownFields.getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo)) {
+        return super.equals(obj);
+      }
+      com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo other = (com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo) obj;
+
+      if (getRecordId()
+          != other.getRecordId()) return false;
+      if (!getRealName()
+          .equals(other.getRealName())) return false;
+      if (!getExt()
+          .equals(other.getExt())) return false;
+      if (getFileSize()
+          != other.getFileSize()) return false;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + RECORDID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getRecordId());
+      hash = (37 * hash) + REALNAME_FIELD_NUMBER;
+      hash = (53 * hash) + getRealName().hashCode();
+      hash = (37 * hash) + EXT_FIELD_NUMBER;
+      hash = (53 * hash) + getExt().hashCode();
+      hash = (37 * hash) + FILESIZE_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getFileSize());
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code FileInfo}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:FileInfo)
+        com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfoOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return com.qlzxsyzx.server.netty.proto.CustomMessage.internal_static_FileInfo_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return com.qlzxsyzx.server.netty.proto.CustomMessage.internal_static_FileInfo_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.class, com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.Builder.class);
+      }
+
+      // Construct using com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
+        }
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        recordId_ = 0L;
+
+        realName_ = "";
+
+        ext_ = "";
+
+        fileSize_ = 0L;
+
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return com.qlzxsyzx.server.netty.proto.CustomMessage.internal_static_FileInfo_descriptor;
+      }
+
+      @java.lang.Override
+      public com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo getDefaultInstanceForType() {
+        return com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo build() {
+        com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo buildPartial() {
+        com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo result = new com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo(this);
+        result.recordId_ = recordId_;
+        result.realName_ = realName_;
+        result.ext_ = ext_;
+        result.fileSize_ = fileSize_;
+        onBuilt();
+        return result;
+      }
+
+      @java.lang.Override
+      public Builder clone() {
+        return super.clone();
+      }
+      @java.lang.Override
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          java.lang.Object value) {
+        return super.setField(field, value);
+      }
+      @java.lang.Override
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return super.clearField(field);
+      }
+      @java.lang.Override
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return super.clearOneof(oneof);
+      }
+      @java.lang.Override
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, java.lang.Object value) {
+        return super.setRepeatedField(field, index, value);
+      }
+      @java.lang.Override
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          java.lang.Object value) {
+        return super.addRepeatedField(field, value);
+      }
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo) {
+          return mergeFrom((com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo other) {
+        if (other == com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo.getDefaultInstance()) return this;
+        if (other.getRecordId() != 0L) {
+          setRecordId(other.getRecordId());
+        }
+        if (!other.getRealName().isEmpty()) {
+          realName_ = other.realName_;
+          onChanged();
+        }
+        if (!other.getExt().isEmpty()) {
+          ext_ = other.ext_;
+          onChanged();
+        }
+        if (other.getFileSize() != 0L) {
+          setFileSize(other.getFileSize());
+        }
+        this.mergeUnknownFields(other.unknownFields);
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo) e.getUnfinishedMessage();
+          throw e.unwrapIOException();
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+
+      private long recordId_ ;
+      /**
+       * <code>int64 recordId = 1;</code>
+       * @return The recordId.
+       */
+      public long getRecordId() {
+        return recordId_;
+      }
+      /**
+       * <code>int64 recordId = 1;</code>
+       * @param value The recordId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRecordId(long value) {
+        
+        recordId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int64 recordId = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearRecordId() {
+        
+        recordId_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object realName_ = "";
+      /**
+       * <code>string realName = 2;</code>
+       * @return The realName.
+       */
+      public java.lang.String getRealName() {
+        java.lang.Object ref = realName_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          realName_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string realName = 2;</code>
+       * @return The bytes for realName.
+       */
+      public com.google.protobuf.ByteString
+          getRealNameBytes() {
+        java.lang.Object ref = realName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          realName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string realName = 2;</code>
+       * @param value The realName to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRealName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        realName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string realName = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearRealName() {
+        
+        realName_ = getDefaultInstance().getRealName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string realName = 2;</code>
+       * @param value The bytes for realName to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRealNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        realName_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object ext_ = "";
+      /**
+       * <code>string ext = 3;</code>
+       * @return The ext.
+       */
+      public java.lang.String getExt() {
+        java.lang.Object ref = ext_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          ext_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string ext = 3;</code>
+       * @return The bytes for ext.
+       */
+      public com.google.protobuf.ByteString
+          getExtBytes() {
+        java.lang.Object ref = ext_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          ext_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string ext = 3;</code>
+       * @param value The ext to set.
+       * @return This builder for chaining.
+       */
+      public Builder setExt(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        ext_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string ext = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearExt() {
+        
+        ext_ = getDefaultInstance().getExt();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string ext = 3;</code>
+       * @param value The bytes for ext to set.
+       * @return This builder for chaining.
+       */
+      public Builder setExtBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        ext_ = value;
+        onChanged();
+        return this;
+      }
+
+      private long fileSize_ ;
+      /**
+       * <code>int64 fileSize = 4;</code>
+       * @return The fileSize.
+       */
+      public long getFileSize() {
+        return fileSize_;
+      }
+      /**
+       * <code>int64 fileSize = 4;</code>
+       * @param value The fileSize to set.
+       * @return This builder for chaining.
+       */
+      public Builder setFileSize(long value) {
+        
+        fileSize_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int64 fileSize = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearFileSize() {
+        
+        fileSize_ = 0L;
+        onChanged();
+        return this;
+      }
+      @java.lang.Override
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.setUnknownFields(unknownFields);
+      }
+
+      @java.lang.Override
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.mergeUnknownFields(unknownFields);
+      }
+
+
+      // @@protoc_insertion_point(builder_scope:FileInfo)
+    }
+
+    // @@protoc_insertion_point(class_scope:FileInfo)
+    private static final com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo();
+    }
+
+    public static com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<FileInfo>
+        PARSER = new com.google.protobuf.AbstractParser<FileInfo>() {
+      @java.lang.Override
+      public FileInfo parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new FileInfo(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<FileInfo> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<FileInfo> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.qlzxsyzx.server.netty.proto.CustomMessage.FileInfo getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
 
@@ -8193,6 +9176,11 @@ public final class CustomMessage {
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_MessageRequest_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_FileInfo_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_FileInfo_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_SystemBroadcast_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
@@ -8221,31 +9209,33 @@ public final class CustomMessage {
       "\"*\n\rLoginResponse\022\014\n\004code\030\001 \001(\005\022\013\n\003msg\030\002" +
       " \001(\t\"4\n\020KeepAliveRequest\022\016\n\006userId\030\001 \001(\003" +
       "\022\020\n\010platform\030\002 \001(\t\".\n\021KeepAliveResponse\022" +
-      "\014\n\004code\030\001 \001(\005\022\013\n\003msg\030\002 \001(\t\"\236\001\n\016MessageRe" +
+      "\014\n\004code\030\001 \001(\005\022\013\n\003msg\030\002 \001(\t\"\251\001\n\016MessageRe" +
       "quest\022\021\n\tmessageId\030\001 \001(\003\022\016\n\006roomId\030\002 \001(\003" +
       "\022\020\n\010senderId\030\003 \001(\003\022\022\n\nreceiverId\030\004 \001(\003\022\014" +
-      "\n\004type\030\005 \001(\005\022\017\n\007content\030\006 \001(\t\022\020\n\010recordI" +
-      "d\030\007 \001(\003\022\022\n\ncreateTime\030\010 \001(\t\"R\n\017SystemBro" +
-      "adcast\022\014\n\004type\030\001 \001(\005\022\014\n\004code\030\002 \001(\005\022\017\n\007co" +
-      "ntent\030\003 \001(\t\022\022\n\ncreateTime\030\004 \001(\t\"w\n\022Syste" +
-      "mNotification\022\014\n\004type\030\001 \001(\005\022\014\n\004code\030\002 \001(" +
-      "\005\022\016\n\006userId\030\003 \001(\003\022\020\n\010platform\030\004 \001(\t\022\017\n\007c" +
-      "ontent\030\005 \001(\t\022\022\n\ncreateTime\030\006 \001(\t\"\336\002\n\007Mes" +
-      "sage\022\020\n\010headType\030\001 \001(\005\022%\n\014loginRequest\030\002" +
-      " \001(\0132\r.LoginRequestH\000\022\'\n\rloginResponse\030\003" +
-      " \001(\0132\016.LoginResponseH\000\022-\n\020keepAliveReque" +
-      "st\030\004 \001(\0132\021.KeepAliveRequestH\000\022/\n\021keepAli" +
-      "veResponse\030\005 \001(\0132\022.KeepAliveResponseH\000\022)" +
-      "\n\016messageRequest\030\006 \001(\0132\017.MessageRequestH" +
-      "\000\022+\n\017systemBroadcast\030\007 \001(\0132\020.SystemBroad" +
-      "castH\000\0221\n\022systemNotification\030\010 \001(\0132\023.Sys" +
-      "temNotificationH\000B\006\n\004body*\246\001\n\010HeadType\022\021" +
-      "\n\rLOGIN_REQUEST\020\000\022\022\n\016LOGIN_RESPONSE\020\001\022\026\n" +
-      "\022KEEP_ALIVE_REQUEST\020\002\022\027\n\023KEEP_ALIVE_RESP" +
-      "ONSE\020\003\022\023\n\017MESSAGE_REQUEST\020\004\022\024\n\020SYSTEM_BR" +
-      "OADCAST\020\005\022\027\n\023SYSTEM_NOTIFICATION\020\006B0\n\037co" +
-      "m.qlzxsyzx.server.netty.protoB\rCustomMes" +
-      "sageb\006proto3"
+      "\n\004type\030\005 \001(\005\022\017\n\007content\030\006 \001(\t\022\033\n\010fileInf" +
+      "o\030\007 \001(\0132\t.FileInfo\022\022\n\ncreateTime\030\010 \001(\t\"M" +
+      "\n\010FileInfo\022\020\n\010recordId\030\001 \001(\003\022\020\n\010realName" +
+      "\030\002 \001(\t\022\013\n\003ext\030\003 \001(\t\022\020\n\010fileSize\030\004 \001(\003\"R\n" +
+      "\017SystemBroadcast\022\014\n\004type\030\001 \001(\005\022\014\n\004code\030\002" +
+      " \001(\005\022\017\n\007content\030\003 \001(\t\022\022\n\ncreateTime\030\004 \001(" +
+      "\t\"w\n\022SystemNotification\022\014\n\004type\030\001 \001(\005\022\014\n" +
+      "\004code\030\002 \001(\005\022\016\n\006userId\030\003 \001(\003\022\020\n\010platform\030" +
+      "\004 \001(\t\022\017\n\007content\030\005 \001(\t\022\022\n\ncreateTime\030\006 \001" +
+      "(\t\"\336\002\n\007Message\022\020\n\010headType\030\001 \001(\005\022%\n\014logi" +
+      "nRequest\030\002 \001(\0132\r.LoginRequestH\000\022\'\n\rlogin" +
+      "Response\030\003 \001(\0132\016.LoginResponseH\000\022-\n\020keep" +
+      "AliveRequest\030\004 \001(\0132\021.KeepAliveRequestH\000\022" +
+      "/\n\021keepAliveResponse\030\005 \001(\0132\022.KeepAliveRe" +
+      "sponseH\000\022)\n\016messageRequest\030\006 \001(\0132\017.Messa" +
+      "geRequestH\000\022+\n\017systemBroadcast\030\007 \001(\0132\020.S" +
+      "ystemBroadcastH\000\0221\n\022systemNotification\030\010" +
+      " \001(\0132\023.SystemNotificationH\000B\006\n\004body*\246\001\n\010" +
+      "HeadType\022\021\n\rLOGIN_REQUEST\020\000\022\022\n\016LOGIN_RES" +
+      "PONSE\020\001\022\026\n\022KEEP_ALIVE_REQUEST\020\002\022\027\n\023KEEP_" +
+      "ALIVE_RESPONSE\020\003\022\023\n\017MESSAGE_REQUEST\020\004\022\024\n" +
+      "\020SYSTEM_BROADCAST\020\005\022\027\n\023SYSTEM_NOTIFICATI" +
+      "ON\020\006B0\n\037com.qlzxsyzx.server.netty.protoB" +
+      "\rCustomMessageb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -8280,21 +9270,27 @@ public final class CustomMessage {
     internal_static_MessageRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_MessageRequest_descriptor,
-        new java.lang.String[] { "MessageId", "RoomId", "SenderId", "ReceiverId", "Type", "Content", "RecordId", "CreateTime", });
-    internal_static_SystemBroadcast_descriptor =
+        new java.lang.String[] { "MessageId", "RoomId", "SenderId", "ReceiverId", "Type", "Content", "FileInfo", "CreateTime", });
+    internal_static_FileInfo_descriptor =
       getDescriptor().getMessageTypes().get(5);
+    internal_static_FileInfo_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_FileInfo_descriptor,
+        new java.lang.String[] { "RecordId", "RealName", "Ext", "FileSize", });
+    internal_static_SystemBroadcast_descriptor =
+      getDescriptor().getMessageTypes().get(6);
     internal_static_SystemBroadcast_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_SystemBroadcast_descriptor,
         new java.lang.String[] { "Type", "Code", "Content", "CreateTime", });
     internal_static_SystemNotification_descriptor =
-      getDescriptor().getMessageTypes().get(6);
+      getDescriptor().getMessageTypes().get(7);
     internal_static_SystemNotification_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_SystemNotification_descriptor,
         new java.lang.String[] { "Type", "Code", "UserId", "Platform", "Content", "CreateTime", });
     internal_static_Message_descriptor =
-      getDescriptor().getMessageTypes().get(7);
+      getDescriptor().getMessageTypes().get(8);
     internal_static_Message_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_Message_descriptor,
