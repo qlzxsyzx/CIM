@@ -17,10 +17,10 @@ public class ChatMessage {
     private Long messageId;
     private Long roomId;
     private Long senderId;
-    private Long receiverId;
+    private Long receiverId; // 接收用户id
     private Integer type; // 0系统，1文本，2图片，3文件
     private String content;
-    private Long recordId; // 文件上传记录ID
+    private FileDetails fileInfo;
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     private LocalDateTime createTime;

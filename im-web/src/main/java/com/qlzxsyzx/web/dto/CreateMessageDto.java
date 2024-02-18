@@ -14,5 +14,7 @@ public class CreateMessageDto {
 
     private String content;
 
+    private String contentText;
+
     private Long recordId;
 }

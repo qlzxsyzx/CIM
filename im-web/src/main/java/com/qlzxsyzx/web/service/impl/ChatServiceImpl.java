@@ -140,7 +140,7 @@ public class ChatServiceImpl implements ChatService {
             return ResponseEntity.fail("聊天不存在");
         }
         // 查询是否被拉黑或者删除
-        if (type == 1) {
+        if (type == 0) {
             BlackListItem blackListItem = blackListService.query().eq("user_id", createMessageDto.getReceiverId())
                     .eq("black_user_id", userId).one();
             if (blackListItem != null) {
@@ -157,7 +157,7 @@ public class ChatServiceImpl implements ChatService {
             }
         }
         // 查询群组是否存在
-        if (type == 2) {
+        if (type == 1) {
             Group group = groupService.getGroupById(createMessageDto.getReceiverId());
             if (group == null) {
                 return ResponseEntity.fail("群组不存在");
@@ -167,9 +167,6 @@ public class ChatServiceImpl implements ChatService {
             } else if (group.getStatus() == 2) {
                 return ResponseEntity.fail("群组已封禁");
             }
-            if (group.getNoSpeak() == 1) {
-                return ResponseEntity.fail("群组禁止发言");
-            }
             // 查询是否被T
             GroupMember member = groupMemberService.getByUserIdAndGroupId(userId, createMessageDto.getReceiverId());
             if (member == null) {
@@ -177,6 +174,9 @@ public class ChatServiceImpl implements ChatService {
             }
             if (member.getStatus() == 2) {
                 return ResponseEntity.fail("你已被移出群组");
+            }
+            if (group.getNoSpeak() == 1 && member.getRole() == 1) {
+                return ResponseEntity.fail("群组禁止发言");
             }
         }
         // 创建消息记录
@@ -213,7 +213,7 @@ public class ChatServiceImpl implements ChatService {
             // 获取最近聊天记录
             List<ChatMessage> chatMessagePage = chatMessageService.query()
                     .eq("room_id", roomId)
-                    .le(lastMessageId != null, "message_id", lastMessageId)
+                    .lt(lastMessageId != null, "message_id", lastMessageId)
                     .orderByDesc("create_time")
                     .last("limit " + pageSize)
                     .list();
@@ -236,7 +236,7 @@ public class ChatServiceImpl implements ChatService {
             if (member.getExitType() == 2) {
                 chatMessageList = chatMessageService.query()
                         .eq("room_id", roomId)
-                        .le(lastMessageId != null, "message_id", lastMessageId)
+                        .lt(lastMessageId != null, "message_id", lastMessageId)
                         .between("create_time", member.getJoinTime(), exitTime)
                         .orderByDesc("create_time")
                         .last("limit " + pageSize)
@@ -244,7 +244,7 @@ public class ChatServiceImpl implements ChatService {
             } else {
                 chatMessageList = chatMessageService.query()
                         .eq("room_id", roomId)
-                        .le(lastMessageId != null, "message_id", lastMessageId)
+                        .lt(lastMessageId != null, "message_id", lastMessageId)
                         .ge("create_time", member.getJoinTime())
                         .orderByDesc("create_time")
                         .last("limit " + pageSize)
@@ -375,7 +375,7 @@ public class ChatServiceImpl implements ChatService {
         Page<ChatMessage> chatMessagePage = chatMessageService.query()
                 .eq("room_id", friend.getRoomId())
                 .le("message_id", lastMessageId)
-                .like(StringUtils.isNotBlank(searchContent), "content", searchContent)
+                .like(StringUtils.isNotBlank(searchContent), "content_text", searchContent)
                 .orderByDesc("create_time")
                 .page(page);
         return ResponseEntity.success(getFileInfo(chatMessagePage.getRecords()));
@@ -410,7 +410,7 @@ public class ChatServiceImpl implements ChatService {
                     .eq("room_id", group.getRoomId())
                     .le("message_id", lastMessageId)
                     .between("create_time", member.getJoinTime(), exitTime)
-                    .like(StringUtils.isNotBlank(searchContent), "content", searchContent)
+                    .like(StringUtils.isNotBlank(searchContent), "content_text", searchContent)
                     .orderByDesc("create_time")
                     .page(page);
         } else {
@@ -418,7 +418,7 @@ public class ChatServiceImpl implements ChatService {
                     .eq("room_id", group.getRoomId())
                     .le("message_id", lastMessageId)
                     .ge("create_time", member.getJoinTime())
-                    .like(StringUtils.isNotBlank(searchContent), "content", searchContent)
+                    .like(StringUtils.isNotBlank(searchContent), "content_text", searchContent)
                     .orderByDesc("create_time")
                     .page(page);
         }
